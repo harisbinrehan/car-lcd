@@ -35,17 +35,22 @@ import java.util.regex.Pattern;
 
 /**
  * In-app updates from this project's GitHub Releases. The repo is public, so no account or token is
- * needed and any internet connection works. A release carries an asset named car-lcd-<versionCode>.apk;
- * when that code is higher than the installed one, the home screen offers the update. The APK is
- * checked (same package, same signing key, expected version) before Android's installer is opened.
+ * needed and any internet connection works. A release carries an asset named car-lcd-<versionCode>.apk
+ * and a small latest.json describing it; when that code is higher than the installed one, the home
+ * screen offers the update. The APK is checked (same package, same signing key, expected version)
+ * before Android's installer is opened.
  */
 final class Updater {
     private Updater() {}
 
     static final String REPO = "harisbinrehan/car-lcd";
-    private static final String LATEST = "https://api.github.com/repos/" + REPO + "/releases/latest";
+    // latest.json is a plain download, so it is not counted against GitHub's API allowance (60 anonymous
+    // calls an hour per network, which a few other devices on the same Wi-Fi can use up)
+    private static final String LATEST = "https://github.com/" + REPO + "/releases/latest/download/latest.json";
+    // releases published before latest.json existed are still found through the API
+    private static final String LATEST_API = "https://api.github.com/repos/" + REPO + "/releases/latest";
     private static final Pattern ASSET = Pattern.compile("car-lcd-(\\d+)\\.apk");
-    private static final long CHECK_EVERY_MS = 3 * 60 * 60 * 1000L;     // GitHub allows 60 anonymous calls an hour
+    private static final long CHECK_EVERY_MS = 3 * 60 * 60 * 1000L;
     private static final long SNOOZE_MS = 12 * 60 * 60 * 1000L;          // "Later" hides the offer this long
     private static final String ACTION_DONE = "com.harislcd.launcher.UPDATE_INSTALLED";
 
@@ -59,6 +64,7 @@ final class Updater {
 
     private static final Handler MAIN = new Handler(Looper.getMainLooper());
     private static volatile boolean busy;
+    private static volatile boolean asking;    // the home screen's own check is running
     // While the driver is away allowing installs, the release waits in prefs: Android restarts the app
     // when that permission changes, so it can't wait in memory. Cleared once the install carries on.
     private static void saveWaiting(Context c, Release r) {
@@ -111,29 +117,14 @@ final class Updater {
                 // test builds only: point at a local copy of a release (set "upd_api" in prefs)
                 if ((app.getApplicationInfo().flags & android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0)
                     api = prefs(app).getString("upd_api", LATEST);
-                HttpURLConnection h = (HttpURLConnection) new URL(api).openConnection();
-                h.setConnectTimeout(10000);
-                h.setReadTimeout(15000);
-                h.setRequestProperty("Accept", "application/vnd.github+json");
-                h.setRequestProperty("User-Agent", "car-lcd-updater");
-                int status = h.getResponseCode();
-                if (status == 404) throw new Exception("No release published yet");
-                if (status != 200) throw new Exception("GitHub answered " + status);
-                JSONObject j = new JSONObject(read(h.getInputStream()));
-                JSONArray assets = j.optJSONArray("assets");
-                Release best = null;
-                for (int i = 0; assets != null && i < assets.length(); i++) {
-                    JSONObject a = assets.getJSONObject(i);
-                    Matcher m = ASSET.matcher(a.optString("name"));
-                    if (!m.matches()) continue;
-                    Release rel = new Release();
-                    rel.code = Integer.parseInt(m.group(1));
-                    rel.url = a.optString("browser_download_url");
-                    rel.size = a.optLong("size");
-                    rel.name = j.optString("tag_name").replaceFirst("^v", "");
-                    rel.notes = j.optString("body").trim();
-                    if (best == null || rel.code > best.code) best = rel;
+                JSONObject j;
+                try {
+                    j = fetch(api);
+                } catch (Exception first) {
+                    if (!api.equals(LATEST)) throw first;
+                    j = fetch(LATEST_API);
                 }
+                Release best = parse(j);
                 prefs(app).edit().putLong("upd_checked", System.currentTimeMillis()).apply();
                 if (best != null && best.code > installedCode(app)) newer = best;
             } catch (Exception e) {
@@ -146,12 +137,56 @@ final class Updater {
         }, "update-check").start();
     }
 
+    private static JSONObject fetch(String url) throws Exception {
+        HttpURLConnection h = (HttpURLConnection) new URL(url).openConnection();
+        h.setConnectTimeout(10000);
+        h.setReadTimeout(15000);
+        h.setRequestProperty("Accept", "application/vnd.github+json, application/json, application/octet-stream");
+        h.setRequestProperty("User-Agent", "car-lcd-updater");
+        int status = h.getResponseCode();
+        if (status == 404) throw new Exception("No release published yet");
+        if (status == 403 || status == 429) throw new Exception("GitHub is busy, try again in an hour");
+        if (status != 200) throw new Exception("GitHub answered " + status);
+        return new JSONObject(read(h.getInputStream()));
+    }
+
+    /** Reads either latest.json ({code, name, notes, url, size}) or GitHub's own description of a release. */
+    private static Release parse(JSONObject j) throws Exception {
+        JSONArray assets = j.optJSONArray("assets");
+        if (assets == null) {
+            Release rel = new Release();
+            rel.code = j.getInt("code");
+            rel.url = j.getString("url");
+            rel.size = j.optLong("size");
+            rel.name = j.optString("name");
+            rel.notes = j.optString("notes").trim();
+            return rel;
+        }
+        Release best = null;
+        for (int i = 0; i < assets.length(); i++) {
+            JSONObject a = assets.getJSONObject(i);
+            Matcher m = ASSET.matcher(a.optString("name"));
+            if (!m.matches()) continue;
+            Release rel = new Release();
+            rel.code = Integer.parseInt(m.group(1));
+            rel.url = a.optString("browser_download_url");
+            rel.size = a.optLong("size");
+            rel.name = j.optString("tag_name").replaceFirst("^v", "");
+            rel.notes = j.optString("body").trim();
+            if (best == null || rel.code > best.code) best = rel;
+        }
+        return best;
+    }
+
     /** Home screen: checks every few hours and offers a newer version, unless the driver said "Later". */
     static void maybeOffer(Activity a) {
         if (continueIfWaiting(a)) return;
         long last = prefs(a).getLong("upd_checked", 0);
         if (System.currentTimeMillis() - last < CHECK_EVERY_MS) return;
+        if (asking) return;     // the home screen can come to the front twice in a row
+        asking = true;
         check(a, (newer, err) -> {
+            asking = false;
             if (newer == null || a.isFinishing() || a.isDestroyed()) return;
             SharedPreferences p = prefs(a);
             boolean snoozed = p.getInt("upd_snooze_code", 0) == newer.code
