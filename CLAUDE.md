@@ -56,6 +56,9 @@ adb shell pm grant com.harislcd.launcher android.permission.ACCESS_FINE_LOCATION
 adb shell pm grant com.harislcd.launcher android.permission.ACCESS_COARSE_LOCATION
 ```
 Re-grant the notification listener after reinstalling; Now Playing is blank without it.
+`adb install` often times out on the unit's weak Wi-Fi. What works: `adb push <apk> /data/local/tmp/`,
+compare `md5sum`, then `adb shell pm install -r /data/local/tmp/<apk>` and delete the file.
+Wireless debugging switches itself off whenever the unit changes Wi-Fi network.
 Developer options on the unit: long-press **Settings** in this launcher.
 
 ## Code map (`app/src/main/java/com/harislcd/launcher/`)
@@ -68,10 +71,13 @@ Developer options on the unit: long-press **Settings** in this launcher.
   (keys `theme`, `mode`, `favourites`); maps theme to style and layout.
 - `Scale` — overrides density so every screen behaves like 1280x648 dp; fontScale fixed at 1.
 - `CarView` — the static car with tap zones: lights toggle (auto 9 s cycle resumes 10 s after a tap),
-  mirror fold/unfold, wheels spin, indicators blink. D-pad OK toggles lights.
-- `CarParts` — **generated** per-theme geometry (wheel ellipses, mirror rect and hinge, fog/indicator points).
-- `CompassView` — classic compass (silver ring, 0–315 numbers, red N, orange/red needle); white
-  face in light, dark face in dark; small sizes drop the numbers.
+  mirror fold (the head swings up about its hinge against the window), wheels spin, indicators flash
+  with a relay rhythm (700 ms period, quick rise, slower fade; tap a fog lamp). D-pad OK toggles lights.
+- `CarParts` — **generated** per-theme geometry (leaning wheel ellipses, mirror patch, hinge and fold
+  angle, fog lamp tap points). The float layout is documented in the file; `taptest.py` reads it too.
+- `CompassView` — the owner's reference design, identical in every theme **and in both light and dark**
+  (white rim, silver band, white face, red N, long orange/red needle = heading, N up). Sizes under
+  100 dp drop the degree numbers. `setPosition(lat, lon)` places the **Kaaba (Qibla) marker** on the rim.
 - `ThemesActivity` — theme cards with previews + mode pills. `AppsActivity` — all apps, search,
   favourites (star tap, touch-hold, or hold OK on a remote).
 
@@ -80,9 +86,12 @@ theme in `values/theme_colors.xml` and `values-night/theme_colors.xml`. Car imag
 theme previews live in `drawable-nodpi/` (dark previews in `drawable-night-nodpi/`).
 
 ## In-app updates (GitHub Releases)
-- `Updater.java`: the home screen checks `api.github.com/repos/harisbinrehan/car-lcd/releases/latest`
-  every 3 h (public repo, no token). A release must carry an asset named `car-lcd-<versionCode>.apk`;
-  if that code is higher than the installed one, a dialog offers it (Install now / Later = 12 h snooze).
+- `Updater.java`: the home screen reads `github.com/harisbinrehan/car-lcd/releases/latest/download/latest.json`
+  every 3 h (public repo, no token; a plain download, so GitHub's 60-calls-an-hour API limit does not
+  apply). If that file is missing it falls back to `api.github.com/.../releases/latest` (releases up to
+  2.3 have no `latest.json`). A release must carry `car-lcd-<versionCode>.apk` and `latest.json`
+  (`{code, name, notes, url, size}`, written by `tools/release.sh`); if the code is higher than the
+  installed one, a dialog offers it (Install now / Later = 12 h snooze).
   Themes page has "Version x · Check for updates". The APK is verified (package, versionCode, same
   signing certificate) and installed via `PackageInstaller`; Android shows its own confirm screen.
 - First time only, Android asks to "Allow from this source"; the app is killed when that changes, so
@@ -94,7 +103,8 @@ theme previews live in `drawable-nodpi/` (dark previews in `drawable-night-nodpi
 - **Signing key**: `~/.carlcd/signing.jks` + `~/.carlcd/signing.properties` (outside the repo). It is
   the same key as the Mac's debug keystore, so debug and release builds upgrade each other. If it is
   lost, no future update can install over the app (uninstall/reinstall needed). Keep a backup.
-- Testing without publishing: debug builds read a `upd_api` pref (URL of a local `latest.json`), and
+- Testing without publishing: debug builds read a `upd_api` pref (URL of a local `latest.json`, in
+  either the format above or GitHub's API format), and
   the debug manifest allows cleartext so the emulator can use `http://10.0.2.2:<port>/`.
 
 ## Bug reports ("Send report" on the Themes page)
@@ -115,8 +125,14 @@ theme previews live in `drawable-nodpi/` (dark previews in `drawable-night-nodpi
 ## Generated files — do not hand-edit
 `tools/gen/` regenerates them; change the generator and rerun (run from `tools/gen`, it reads
 `sizes.json` etc. from the current folder):
-- `cars.py <res>` → `car_<theme>.png`, `lights_<theme>.png` from the `cut_*.png` cutouts.
-- `parts.py <res> <javaDir>` → wheel/mirror/indicator overlays + `CarParts.java` (positions in `parts.json`).
+- One car picture is used in every theme: `cut_premium.png` (the owner's studio picture, cut out, plate
+  blanked). Its geometry (lamps, indicator sections, wheels, mirror outline and hinge) is in `car.json`,
+  in that picture's pixels; `carlib.py` holds the shared image code. Needs Pillow, numpy, opencv.
+- `cars.py <res>` → `car_<theme>.png` (lamps **off**, derived) and `lights_<theme>.png` (the picture's real
+  lit pixels; fully faded in it is the original). The slot per theme is `BOX` in `cars.py`; the car is
+  taller than those slots, so it is height-limited and never wider than before.
+- `parts.py <res> <javaDir>` → `wheel_f/r`, `mirror`, `mirrorlit`, `mirrorbg`, `blink` overlays + `CarParts.java`.
+  Indicators are the lamp's own pixels turned amber, not painted blobs; the fog lamps do not flash.
 - `layouts.py <res>` → `activity_main_<theme>.xml` for 9 themes and the stage block of the classic `activity_main.xml`.
 Theme previews are screenshots of the real screens from the emulator, cropped to 480x243.
 
@@ -126,7 +142,8 @@ Theme previews are screenshots of the real screens from the emulator, cropped to
   view bounds from `adb shell dumpsys activity com.harislcd.launcher/.MainActivity` instead
   (`tools/test/pos.sh`).
 - `tools/test/`: `emu.sh` (set theme/mode, screenshot), `sweep.sh` (all themes), `taptest.py`
-  (car parts in every theme), `dpadwalk.py` (remote reachability), `unit.sh` (flaky-link adb).
+  (car parts in every theme; an odd single-theme failure is usually timing, rerun that theme),
+  `dpadwalk.py` (remote reachability), `unit.sh` (flaky-link adb).
   They use `$ADB` (default `adb`) and write screenshots to `$CARLCD_WORK` (default `/tmp/carlcd`).
 - Check every change in **all 10 themes x light and dark** for clipping, and with a remote (D-pad):
   every control must be reachable and show a focus ring.
@@ -142,20 +159,17 @@ machine-specific paths.
 ## Product rules from the owner
 - Keep the apps they use: Radio, Bluetooth, Android Auto, Equalizer, YouTube, Music, Apps, Themes, Settings.
 - Every feature must work in **every** theme and in both light and dark.
-- Car is static; only parts move (lights, mirrors, wheels, indicators). Use the exact car images from
-  the owner's mockups; don't swap in other car art.
+- Car is static; only parts move (lights, mirrors, wheels, indicators). Use the owner's own car picture
+  (since 2026-11-26 the single "premium" studio picture, in every theme); don't swap in other car art,
+  don't mirror it. The owner wants any further angles to be of the same quality and will supply them.
 - Large touch targets and fonts (used while driving); nothing clipped; 12-hour clock.
 - Change only what was asked; suggest extras instead of slipping them in.
 - Never commit or push without the owner approving that specific commit/push.
 - No `Co-Authored-By: Claude` (or any Claude attribution) in commit messages or PRs.
 
 ## Open requests (as of 2026-11-26)
-- Indicator blink looks fake; mirror looks awkward when folded — redo both (check screenshots).
 - Rotate the car with a finger drag (needs the car angle images from the owner, or a 3D approach).
 - Clock on the unit is wrong — investigate (time zone / format on the unit vs. the app).
 - Make the Now Playing player bigger and easier to use.
-- Add the **Qibla** marker (Kaaba icon on the compass ring pointing to Mecca from GPS position).
-- Install the latest build on the unit once over adb (needs the current wireless debugging port);
-  from then on updates come from GitHub Releases.
 - Remote diagnostics: built as "Send report" (see Bug reports above). The owner still has to create the
   report key and the first release carrying it has to reach the unit.

@@ -13,14 +13,16 @@ button is remapped, so nothing in the unit's own software is changed.
 - Apps: Radio, Bluetooth, Android Auto, Equalizer, YouTube, Music, Apps, Themes, Settings.
   YouTube opens at any time.
 - 12-hour clock with AM/PM and date, weather (Open-Meteo, no key), GPS speed (smoothed so it does
-  not flicker between 0 and 1) and a compass showing the heading.
+  not flicker between 0 and 1) and a compass showing the heading, with a Kaaba on its rim marking
+  the direction of Mecca (Qibla) from where the car is.
 - **Now Playing**: shows the track or station and the app it comes from (radio, Android Auto,
   music, YouTube, ...) with previous / play-pause / next. With nothing playing, play opens Music.
 - **The car** is a still image with moving parts:
-  - tap the lights: lights on / off; the automatic light cycle resumes after 10 seconds
-  - tap a mirror: it folds / unfolds
+  - tap the car: lights on / off; the automatic light cycle resumes after 10 seconds
+  - tap the mirror: it folds back against the window / opens again
   - tap a tyre: the wheels spin (stop on a second tap, or after 10 seconds)
-  - tap an indicator: indicators blink (stop on a second tap, or after 30 seconds)
+  - tap a fog lamp: the indicators flash, in the headlamps and on the mirror (stop on a second tap,
+    or after 30 seconds)
 - Everything is reachable with a remote (arrow keys + OK).
 - Hold **Settings** to open Developer options.
 
@@ -82,7 +84,7 @@ The nine non-classic home layouts, the car images, the wheel / mirror / indicato
 `CarParts.java` are generated. Do not edit them by hand; change the generator and rerun:
 ```sh
 cd tools/gen
-python3 cars.py ../../app/src/main/res          # car + lights images from the cut_*.png cutouts
+python3 cars.py ../../app/src/main/res          # car + lights images from cut_premium.png
 python3 parts.py ../../app/src/main/res ../../app/src/main/java/com/harislcd/launcher
 python3 layouts.py ../../app/src/main/res       # all theme layouts
 ```
