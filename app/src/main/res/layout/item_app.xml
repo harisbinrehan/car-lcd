@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="150dp"
+    android:background="@drawable/card_bg">
+    <LinearLayout
+        android:layout_width="match_parent" android:layout_height="match_parent"
+        android:orientation="vertical" android:gravity="center">
+        <ImageView android:id="@+id/app_icon" android:layout_width="64dp" android:layout_height="64dp" />
+        <TextView android:id="@+id/app_name"
+            android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:layout_marginTop="12dp" android:paddingStart="8dp" android:paddingEnd="8dp"
+            android:textColor="?attr/cFg" android:textSize="18sp"
+            android:fontFamily="sans-serif-medium" android:maxLines="1" android:ellipsize="end" />
+    </LinearLayout>
+    <!-- not focusable, so tapping the tile itself still opens the app -->
+    <TextView android:id="@+id/app_star"
+        android:layout_width="54dp" android:layout_height="54dp" android:layout_gravity="top|end"
+        android:gravity="center" android:textSize="26sp" android:focusable="false" android:text="☆" />
+</FrameLayout>

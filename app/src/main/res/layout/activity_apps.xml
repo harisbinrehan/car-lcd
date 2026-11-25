@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:orientation="vertical" android:background="@drawable/screen_bg"
+    android:paddingStart="28dp" android:paddingEnd="28dp" android:paddingTop="16dp">
+
+    <LinearLayout
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="horizontal" android:gravity="center_vertical" android:paddingBottom="14dp">
+        <ImageView android:id="@+id/btn_back"
+            android:layout_width="52dp" android:layout_height="52dp" android:padding="8dp"
+            android:src="@drawable/ic_back" android:background="@drawable/focus_bg" android:clickable="true" android:focusable="true"
+            android:contentDescription="Back" />
+        <TextView
+            android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="10dp"
+            android:text="APPS" android:textColor="?attr/cFg" android:textSize="26sp"
+            android:textStyle="bold" android:letterSpacing="0.1" />
+        <EditText android:id="@+id/search"
+            android:layout_width="440dp" android:layout_height="52dp" android:layout_marginStart="36dp"
+            android:background="@drawable/tile_bg" android:paddingStart="20dp" android:paddingEnd="20dp"
+            android:hint="Search apps" android:textColor="?attr/cFg" android:textColorHint="?attr/cMuted"
+            android:textSize="19sp" android:singleLine="true" android:inputType="text"
+            android:imeOptions="actionSearch|flagNoExtractUi|flagNoFullscreen"
+            android:nextFocusDown="@+id/grid" />
+        <Space android:layout_width="0dp" android:layout_height="1dp" android:layout_weight="1" />
+        <TextView
+            android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="☆ keeps an app at the top" android:textColor="?attr/cMuted" android:textSize="15sp" />
+        <LinearLayout android:id="@+id/btn_themes"
+            android:layout_width="wrap_content" android:layout_height="52dp" android:layout_marginStart="22dp"
+            android:orientation="horizontal" android:gravity="center_vertical" android:background="@drawable/tile_bg"
+            android:paddingStart="16dp" android:paddingEnd="18dp" android:clickable="true" android:focusable="true">
+            <ImageView android:layout_width="26dp" android:layout_height="26dp" android:src="@drawable/ic_theme" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="10dp"
+                android:text="Themes" android:textColor="?attr/cFg" android:textSize="17sp" android:fontFamily="sans-serif-medium" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <FrameLayout android:layout_width="match_parent" android:layout_height="match_parent">
+        <GridView android:id="@+id/grid"
+            android:layout_width="match_parent" android:layout_height="match_parent"
+            android:numColumns="5" android:horizontalSpacing="16dp" android:verticalSpacing="16dp"
+            android:stretchMode="columnWidth" android:listSelector="@drawable/focus_bg" android:drawSelectorOnTop="true"
+            android:clipToPadding="false" android:paddingBottom="18dp" android:scrollbars="none"
+            android:nextFocusUp="@+id/search" android:focusable="true" android:focusedByDefault="true"
+            xmlns:tools="http://schemas.android.com/tools" tools:targetApi="o">
+            <requestFocus />
+        </GridView>
+        <TextView android:id="@+id/empty"
+            android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal" android:layout_marginTop="90dp"
+            android:text="No apps match your search" android:textColor="?attr/cMuted" android:textSize="20sp"
+            android:visibility="gone" />
+    </FrameLayout>
+</LinearLayout>
