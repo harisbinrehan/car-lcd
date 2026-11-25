@@ -1,0 +1,4 @@
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_focused="true"><shape android:shape="oval"><solid android:color="?attr/cAccent"/><stroke android:width="3dp" android:color="?attr/cFg"/></shape></item>
+    <item><shape android:shape="oval"><solid android:color="?attr/cAccent"/></shape></item>
+</selector>
