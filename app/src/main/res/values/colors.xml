@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Light theme (lights off). The dark values live in values-night/colors.xml. -->
+<resources>
+    <color name="screen">#FFEEF1F6</color>
+    <color name="screen_top">#FFF4F6FA</color>
+    <color name="screen_bottom">#FFE3E8F0</color>
+    <color name="rail">#FFFAFBFD</color>
+    <color name="card">#FFFFFFFF</color>
+    <color name="tile">#FFFFFFFF</color>
+    <color name="hair">#140F172A</color>
+    <color name="fg">#FF0F172A</color>
+    <color name="soft">#FF475569</color>
+    <color name="muted">#FF7B8496</color>
+    <color name="accent">#FF2B7FE0</color>
+    <color name="glow">#2E2B7FE0</color>
+    <color name="floor">#520F172A</color>
+    <color name="compass_dial">#0D0F172A</color>
+    <color name="compass_tick">#FF334155</color>
+    <color name="compass_tick_minor">#FFA3ACBB</color>
+    <color name="compass_tail">#FFA3ACBB</color>
+</resources>

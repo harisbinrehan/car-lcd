@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Every theme takes its colours from values/ (light) and values-night/ (dark). -->
+    <style name="Theme.CarLCD" parent="Theme.AppCompat.DayNight.NoActionBar">
+        <item name="android:windowBackground">@android:color/black</item>
+        <item name="android:statusBarColor">?attr/cScreenTop</item>
+        <item name="android:navigationBarColor">?attr/cScreenBottom</item>
+        <item name="android:windowLightStatusBar">@bool/light_bars</item>
+        <item name="android:windowNoTitle">true</item>
+        <!-- no blank "starting" window: it was drawn in light colours and showed as a white flash -->
+        <item name="android:windowDisablePreview">true</item>
+        <item name="cScreenTop">@color/screen_top</item><item name="cScreenBottom">@color/screen_bottom</item>
+        <item name="cRail">@color/rail</item><item name="cCard">@color/card</item><item name="cTile">@color/tile</item>
+        <item name="cHair">@color/hair</item><item name="cFg">@color/fg</item><item name="cSoft">@color/soft</item>
+        <item name="cMuted">@color/muted</item><item name="cAccent">@color/accent</item><item name="cOnAccent">#FFFFFFFF</item>
+        <item name="cGlow">@color/glow</item><item name="cDial">@color/compass_dial</item>
+        <item name="cTick">@color/compass_tick</item><item name="cTick2">@color/compass_tick_minor</item>
+    </style>
+    <style name="Theme.CarLCD.Crimson">
+        <item name="cScreenTop">@color/crimson_cScreenTop</item>
+        <item name="cScreenBottom">@color/crimson_cScreenBottom</item>
+        <item name="cRail">@color/crimson_cRail</item>
+        <item name="cCard">@color/crimson_cCard</item>
+        <item name="cTile">@color/crimson_cTile</item>
+        <item name="cHair">@color/crimson_cHair</item>
+        <item name="cFg">@color/crimson_cFg</item>
+        <item name="cSoft">@color/crimson_cSoft</item>
+        <item name="cMuted">@color/crimson_cMuted</item>
+        <item name="cAccent">@color/crimson_cAccent</item>
+        <item name="cOnAccent">@color/crimson_cOnAccent</item>
+        <item name="cGlow">@color/crimson_cGlow</item>
+        <item name="cDial">@color/crimson_cDial</item>
+        <item name="cTick">@color/crimson_cTick</item>
+        <item name="cTick2">@color/crimson_cTick2</item>
+    </style>
+    <style name="Theme.CarLCD.Ivory">
+        <item name="cScreenTop">@color/ivory_cScreenTop</item>
+        <item name="cScreenBottom">@color/ivory_cScreenBottom</item>
+        <item name="cRail">@color/ivory_cRail</item>
+        <item name="cCard">@color/ivory_cCard</item>
+        <item name="cTile">@color/ivory_cTile</item>
+        <item name="cHair">@color/ivory_cHair</item>
+        <item name="cFg">@color/ivory_cFg</item>
+        <item name="cSoft">@color/ivory_cSoft</item>
+        <item name="cMuted">@color/ivory_cMuted</item>
+        <item name="cAccent">@color/ivory_cAccent</item>
+        <item name="cOnAccent">@color/ivory_cOnAccent</item>
+        <item name="cGlow">@color/ivory_cGlow</item>
+        <item name="cDial">@color/ivory_cDial</item>
+        <item name="cTick">@color/ivory_cTick</item>
+        <item name="cTick2">@color/ivory_cTick2</item>
+    </style>
+    <style name="Theme.CarLCD.Gold">
+        <item name="cScreenTop">@color/gold_cScreenTop</item>
+        <item name="cScreenBottom">@color/gold_cScreenBottom</item>
+        <item name="cRail">@color/gold_cRail</item>
+        <item name="cCard">@color/gold_cCard</item>
+        <item name="cTile">@color/gold_cTile</item>
+        <item name="cHair">@color/gold_cHair</item>
+        <item name="cFg">@color/gold_cFg</item>
+        <item name="cSoft">@color/gold_cSoft</item>
+        <item name="cMuted">@color/gold_cMuted</item>
+        <item name="cAccent">@color/gold_cAccent</item>
+        <item name="cOnAccent">@color/gold_cOnAccent</item>
+        <item name="cGlow">@color/gold_cGlow</item>
+        <item name="cDial">@color/gold_cDial</item>
+        <item name="cTick">@color/gold_cTick</item>
+        <item name="cTick2">@color/gold_cTick2</item>
+    </style>
+    <style name="Theme.CarLCD.Forest">
+        <item name="cScreenTop">@color/forest_cScreenTop</item>
+        <item name="cScreenBottom">@color/forest_cScreenBottom</item>
+        <item name="cRail">@color/forest_cRail</item>
+        <item name="cCard">@color/forest_cCard</item>
+        <item name="cTile">@color/forest_cTile</item>
+        <item name="cHair">@color/forest_cHair</item>
+        <item name="cFg">@color/forest_cFg</item>
+        <item name="cSoft">@color/forest_cSoft</item>
+        <item name="cMuted">@color/forest_cMuted</item>
+        <item name="cAccent">@color/forest_cAccent</item>
+        <item name="cOnAccent">@color/forest_cOnAccent</item>
+        <item name="cGlow">@color/forest_cGlow</item>
+        <item name="cDial">@color/forest_cDial</item>
+        <item name="cTick">@color/forest_cTick</item>
+        <item name="cTick2">@color/forest_cTick2</item>
+    </style>
+    <style name="Theme.CarLCD.Violet">
+        <item name="cScreenTop">@color/violet_cScreenTop</item>
+        <item name="cScreenBottom">@color/violet_cScreenBottom</item>
+        <item name="cRail">@color/violet_cRail</item>
+        <item name="cCard">@color/violet_cCard</item>
+        <item name="cTile">@color/violet_cTile</item>
+        <item name="cHair">@color/violet_cHair</item>
+        <item name="cFg">@color/violet_cFg</item>
+        <item name="cSoft">@color/violet_cSoft</item>
+        <item name="cMuted">@color/violet_cMuted</item>
+        <item name="cAccent">@color/violet_cAccent</item>
+        <item name="cOnAccent">@color/violet_cOnAccent</item>
+        <item name="cGlow">@color/violet_cGlow</item>
+        <item name="cDial">@color/violet_cDial</item>
+        <item name="cTick">@color/violet_cTick</item>
+        <item name="cTick2">@color/violet_cTick2</item>
+    </style>
+    <style name="Theme.CarLCD.Silver">
+        <item name="cScreenTop">@color/silver_cScreenTop</item>
+        <item name="cScreenBottom">@color/silver_cScreenBottom</item>
+        <item name="cRail">@color/silver_cRail</item>
+        <item name="cCard">@color/silver_cCard</item>
+        <item name="cTile">@color/silver_cTile</item>
+        <item name="cHair">@color/silver_cHair</item>
+        <item name="cFg">@color/silver_cFg</item>
+        <item name="cSoft">@color/silver_cSoft</item>
+        <item name="cMuted">@color/silver_cMuted</item>
+        <item name="cAccent">@color/silver_cAccent</item>
+        <item name="cOnAccent">@color/silver_cOnAccent</item>
+        <item name="cGlow">@color/silver_cGlow</item>
+        <item name="cDial">@color/silver_cDial</item>
+        <item name="cTick">@color/silver_cTick</item>
+        <item name="cTick2">@color/silver_cTick2</item>
+    </style>
+    <style name="Theme.CarLCD.Sky">
+        <item name="cScreenTop">@color/sky_cScreenTop</item>
+        <item name="cScreenBottom">@color/sky_cScreenBottom</item>
+        <item name="cRail">@color/sky_cRail</item>
+        <item name="cCard">@color/sky_cCard</item>
+        <item name="cTile">@color/sky_cTile</item>
+        <item name="cHair">@color/sky_cHair</item>
+        <item name="cFg">@color/sky_cFg</item>
+        <item name="cSoft">@color/sky_cSoft</item>
+        <item name="cMuted">@color/sky_cMuted</item>
+        <item name="cAccent">@color/sky_cAccent</item>
+        <item name="cOnAccent">@color/sky_cOnAccent</item>
+        <item name="cGlow">@color/sky_cGlow</item>
+        <item name="cDial">@color/sky_cDial</item>
+        <item name="cTick">@color/sky_cTick</item>
+        <item name="cTick2">@color/sky_cTick2</item>
+    </style>
+    <style name="Theme.CarLCD.Noir">
+        <item name="cScreenTop">@color/noir_cScreenTop</item>
+        <item name="cScreenBottom">@color/noir_cScreenBottom</item>
+        <item name="cRail">@color/noir_cRail</item>
+        <item name="cCard">@color/noir_cCard</item>
+        <item name="cTile">@color/noir_cTile</item>
+        <item name="cHair">@color/noir_cHair</item>
+        <item name="cFg">@color/noir_cFg</item>
+        <item name="cSoft">@color/noir_cSoft</item>
+        <item name="cMuted">@color/noir_cMuted</item>
+        <item name="cAccent">@color/noir_cAccent</item>
+        <item name="cOnAccent">@color/noir_cOnAccent</item>
+        <item name="cGlow">@color/noir_cGlow</item>
+        <item name="cDial">@color/noir_cDial</item>
+        <item name="cTick">@color/noir_cTick</item>
+        <item name="cTick2">@color/noir_cTick2</item>
+    </style>
+    <style name="Theme.CarLCD.Amber">
+        <item name="cScreenTop">@color/amber_cScreenTop</item>
+        <item name="cScreenBottom">@color/amber_cScreenBottom</item>
+        <item name="cRail">@color/amber_cRail</item>
+        <item name="cCard">@color/amber_cCard</item>
+        <item name="cTile">@color/amber_cTile</item>
+        <item name="cHair">@color/amber_cHair</item>
+        <item name="cFg">@color/amber_cFg</item>
+        <item name="cSoft">@color/amber_cSoft</item>
+        <item name="cMuted">@color/amber_cMuted</item>
+        <item name="cAccent">@color/amber_cAccent</item>
+        <item name="cOnAccent">@color/amber_cOnAccent</item>
+        <item name="cGlow">@color/amber_cGlow</item>
+        <item name="cDial">@color/amber_cDial</item>
+        <item name="cTick">@color/amber_cTick</item>
+        <item name="cTick2">@color/amber_cTick2</item>
+    </style>
+</resources>

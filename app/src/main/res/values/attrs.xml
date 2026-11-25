@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <attr name="cScreenTop" format="color" /><attr name="cScreenBottom" format="color" />
+    <attr name="cRail" format="color" /><attr name="cCard" format="color" /><attr name="cTile" format="color" />
+    <attr name="cHair" format="color" /><attr name="cFg" format="color" /><attr name="cSoft" format="color" />
+    <attr name="cMuted" format="color" /><attr name="cAccent" format="color" /><attr name="cOnAccent" format="color" />
+    <attr name="cGlow" format="color" /><attr name="cDial" format="color" />
+    <attr name="cTick" format="color" /><attr name="cTick2" format="color" />
+</resources>

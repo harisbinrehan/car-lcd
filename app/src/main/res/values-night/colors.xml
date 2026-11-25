@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="screen">#FF080C14</color>
+    <color name="screen_top">#FF0B111C</color>
+    <color name="screen_bottom">#FF05080D</color>
+    <color name="rail">#FF10151F</color>
+    <color name="card">#FF131925</color>
+    <color name="tile">#FF131925</color>
+    <color name="hair">#14FFFFFF</color>
+    <color name="fg">#FFF3F5F9</color>
+    <color name="soft">#FFB9C0CF</color>
+    <color name="muted">#FF7F889B</color>
+    <color name="accent">#FF4AA3FF</color>
+    <color name="glow">#3D4AA3FF</color>
+    <color name="floor">#C7000000</color>
+    <color name="compass_dial">#0DFFFFFF</color>
+    <color name="compass_tick">#FFC9D0DD</color>
+    <color name="compass_tick_minor">#FF566079</color>
+    <color name="compass_tail">#FF566079</color>
+</resources>
