@@ -34,6 +34,11 @@ button is remapped, so nothing in the unit's own software is changed.
 - Every installed app, a search box, and favourites: tap the star (or hold the tile / hold OK on
   the remote) to keep an app at the top.
 
+**Updates**
+- The app checks this repo's GitHub Releases and offers a newer version on the car screen
+  (any internet connection). Install now downloads, checks and installs it; Android asks to confirm.
+  Themes page: "Check for updates". Publish a version with `tools/release.sh 2.1 "what's new"`.
+
 ## Apps it links to (edit in `MainActivity.java` if a package differs)
 | Tile | Target |
 |------|--------|

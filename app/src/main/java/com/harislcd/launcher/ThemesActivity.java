@@ -22,6 +22,12 @@ public class ThemesActivity extends AppCompatActivity {
     protected void attachBaseContext(android.content.Context base) { super.attachBaseContext(Scale.wrap(base)); }
 
     @Override
+    protected void onResume() {
+        super.onResume();
+        Updater.continueIfWaiting(this);   // back from allowing installs
+    }
+
+    @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         final String current = ThemeStore.theme(this), mode = ThemeStore.mode(this);
         setTheme(ThemeStore.style(current));
@@ -54,6 +60,40 @@ public class ThemesActivity extends AppCompatActivity {
         title.setPadding(dp(10), 0, 0, 0);
         head.addView(title);
         head.addView(new View(this), new LinearLayout.LayoutParams(0, 1, 1f));
+
+        // version + manual update check
+        TextView ver = new TextView(this);
+        ver.setText("Version " + Updater.installedName(this) + "  ·  Check for updates");
+        ver.setTextSize(16);
+        ver.setTextColor(fg);
+        ver.setGravity(Gravity.CENTER);
+        ver.setPadding(dp(18), 0, dp(18), 0);
+        GradientDrawable vb = new GradientDrawable();
+        vb.setCornerRadius(dp(24));
+        vb.setColor(card);
+        vb.setStroke(dp(1), hair);
+        GradientDrawable vf = new GradientDrawable();
+        vf.setCornerRadius(dp(24));
+        vf.setColor(card);
+        vf.setStroke(dp(3), fg);
+        android.graphics.drawable.StateListDrawable vs = new android.graphics.drawable.StateListDrawable();
+        vs.addState(new int[]{android.R.attr.state_focused}, vf);
+        vs.addState(new int[]{}, vb);
+        ver.setBackground(vs);
+        ver.setFocusable(true);
+        ver.setOnClickListener(v -> {
+            ver.setText("Checking…");
+            Updater.check(this, (newer, err) -> {
+                ver.setText("Version " + Updater.installedName(this) + "  ·  Check for updates");
+                if (isFinishing()) return;
+                if (newer != null) Updater.offer(this, newer);
+                else android.widget.Toast.makeText(this, err != null ? "Couldn't check: " + err
+                        : "You have the latest version (" + Updater.installedName(this) + ")", android.widget.Toast.LENGTH_LONG).show();
+            });
+        });
+        LinearLayout.LayoutParams vlp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, dp(46));
+        vlp.setMargins(0, 0, dp(14), 0);
+        head.addView(ver, vlp);
 
         // light / dark switch: applies to whichever theme is chosen
         String[] labels = {"Auto (car lights)", "Light", "Dark"};

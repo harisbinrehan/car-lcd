@@ -79,6 +79,24 @@ Resources: theme colours are attributes (`values/attrs.xml`: cFg, cAccent, cCard
 theme in `values/theme_colors.xml` and `values-night/theme_colors.xml`. Car images, overlays and
 theme previews live in `drawable-nodpi/` (dark previews in `drawable-night-nodpi/`).
 
+## In-app updates (GitHub Releases)
+- `Updater.java`: the home screen checks `api.github.com/repos/harisbinrehan/car-lcd/releases/latest`
+  every 3 h (public repo, no token). A release must carry an asset named `car-lcd-<versionCode>.apk`;
+  if that code is higher than the installed one, a dialog offers it (Install now / Later = 12 h snooze).
+  Themes page has "Version x · Check for updates". The APK is verified (package, versionCode, same
+  signing certificate) and installed via `PackageInstaller`; Android shows its own confirm screen.
+- First time only, Android asks to "Allow from this source"; the app is killed when that changes, so
+  the pending release is kept in prefs (`upd_wait_*`) and the install continues on return.
+- After an update Android 11 won't let the app reopen itself (background activity start blocked);
+  the screen shows the fallback launcher until Home is pressed. Car LCD stays the default Home.
+- Publish: `tools/release.sh <versionName> "<notes>"` (bumps versionCode, signed release build, commit,
+  tag `v<name>`, push, `gh release create`). Ask the owner before every release.
+- **Signing key**: `~/.carlcd/signing.jks` + `~/.carlcd/signing.properties` (outside the repo). It is
+  the same key as the Mac's debug keystore, so debug and release builds upgrade each other. If it is
+  lost, no future update can install over the app (uninstall/reinstall needed). Keep a backup.
+- Testing without publishing: debug builds read a `upd_api` pref (URL of a local `latest.json`), and
+  the debug manifest allows cleartext so the emulator can use `http://10.0.2.2:<port>/`.
+
 ## Generated files — do not hand-edit
 `tools/gen/` regenerates them; change the generator and rerun (run from `tools/gen`, it reads
 `sizes.json` etc. from the current folder):
@@ -114,6 +132,7 @@ machine-specific paths.
 - Large touch targets and fonts (used while driving); nothing clipped; 12-hour clock.
 - Change only what was asked; suggest extras instead of slipping them in.
 - Never commit or push without the owner approving that specific commit/push.
+- No `Co-Authored-By: Claude` (or any Claude attribution) in commit messages or PRs.
 
 ## Open requests (as of 2026-11-26)
 - Indicator blink looks fake; mirror looks awkward when folded — redo both (check screenshots).
@@ -121,4 +140,6 @@ machine-specific paths.
 - Clock on the unit is wrong — investigate (time zone / format on the unit vs. the app).
 - Make the Now Playing player bigger and easier to use.
 - Add the **Qibla** marker (Kaaba icon on the compass ring pointing to Mecca from GPS position).
-- Install the latest build on the unit (needs the current wireless debugging port).
+- Install the latest build on the unit once over adb (needs the current wireless debugging port);
+  from then on updates come from GitHub Releases.
+- Remote diagnostics ("know what's happening in the app") — not built; owner to choose how.

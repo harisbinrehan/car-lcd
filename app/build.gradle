@@ -2,6 +2,12 @@ plugins {
     id 'com.android.application'
 }
 
+// Release signing key lives outside the repo (see CLAUDE.md). Updates only install over a build
+// signed with the same key, so never lose or change it.
+def signingProps = new Properties()
+def signingFile = new File(System.getProperty('user.home'), '.carlcd/signing.properties')
+if (signingFile.exists()) signingFile.withInputStream { signingProps.load(it) }
+
 android {
     namespace 'com.harislcd.launcher'
     compileSdk 34
@@ -14,8 +20,20 @@ android {
         versionName "2.0"
     }
 
+    signingConfigs {
+        release {
+            if (signingProps['storeFile']) {
+                storeFile file(signingProps['storeFile'])
+                storePassword signingProps['storePassword']
+                keyAlias signingProps['keyAlias']
+                keyPassword signingProps['keyPassword']
+            }
+        }
+    }
+
     buildTypes {
         release {
+            signingConfig signingProps['storeFile'] ? signingConfigs.release : signingConfigs.debug
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }

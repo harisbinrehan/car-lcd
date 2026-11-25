@@ -445,6 +445,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         getContentResolver().registerContentObserver(
                 Settings.System.getUriFor(ThemeStore.LIGHTS_SETTING), false, lightsObserver);
         ui.post(clockTick);
+        Updater.maybeOffer(this);   // looks for a newer release every few hours
         if (sensorManager != null && rotation != null) {
             sensorManager.registerListener(this, rotation, SensorManager.SENSOR_DELAY_UI);
         }
