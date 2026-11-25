@@ -106,6 +106,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         txtHigh = findViewById(R.id.txt_high);
         txtLow = findViewById(R.id.txt_low);
         compass = findViewById(R.id.compass_view);
+        if (compass != null) compass.setPosition(lat, lon);   // Qibla marker; the city-level default is close enough until GPS has a fix
         setupNowPlaying();
 
         // rail
@@ -383,6 +384,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     public void onLocationChanged(@NonNull Location location) {
         lat = location.getLatitude();
         lon = location.getLongitude();
+        if (compass != null) compass.setPosition(lat, lon);
         if (LocationManager.GPS_PROVIDER.equals(location.getProvider())) {
             Diag.logChange("gps-fix", "gps has a fix");   // the position itself is never written down
             float kmh = steadySpeed(location.hasSpeed() ? location.getSpeed() * 3.6f : 0f);

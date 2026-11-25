@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout android:layout_width="match_parent" android:layout_height="match_parent" xmlns:android="http://schemas.android.com/apk/res/android" android:background="@drawable/screen_bg" android:padding="14dp">
-<com.harislcd.launcher.CarView android:id="@+id/car_view" android:layout_width="685dp" android:layout_height="450dp" android:contentDescription="Toyota Vitz" android:focusable="true" android:layout_gravity="center" android:layout_marginTop="6dp"/>
+<com.harislcd.launcher.CarView android:id="@+id/car_view" android:layout_width="604dp" android:layout_height="450dp" android:contentDescription="Toyota Vitz" android:focusable="true" android:layout_gravity="center" android:layout_marginTop="6dp"/>
 <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="horizontal" android:baselineAligned="false" android:layout_gravity="top|start">
 <LinearLayout android:id="@+id/tile_radio" android:layout_width="104dp" android:layout_height="wrap_content" android:orientation="vertical" android:baselineAligned="false" android:gravity="center" android:background="@drawable/focus_bg" android:paddingTop="8dp" android:paddingBottom="8dp" android:clickable="true" android:focusable="true">
 <ImageView android:layout_width="32dp" android:layout_height="32dp" android:src="@drawable/ic_radio" />

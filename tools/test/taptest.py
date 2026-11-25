@@ -14,7 +14,7 @@ def diff(a,b,box): return ImageStat.Stat(ImageChops.difference(a.crop(box),b.cro
 themes=sys.argv[1:] or list(parts)
 ok_all=True
 for t in themes:
-    subprocess.run([S+"/emu.sh","set",t,"dark"]); time.sleep(6)
+    subprocess.run([os.path.join(os.path.dirname(os.path.abspath(__file__)),"emu.sh"),"set",t,"dark"]); time.sleep(6)
     # absolute position of the car from the view hierarchy dump (offsets are relative to each parent)
     dump=sh("dumpsys","activity","com.harislcd.launcher/.MainActivity"); stack=[]; m=None
     for line in dump.splitlines():
@@ -33,25 +33,26 @@ for t in themes:
     x0,y0,x1,y1=map(int,m.groups()); p=parts[t]; sx=(x1-x0)/p[0]; sy=(y1-y0)/p[1]
     P=lambda i,j:(x0+p[i]*sx,y0+p[j]*sy)
     wbox=lambda i:(int(x0+(p[i]-p[i+2])*sx),int(y0+(p[i+1]-p[i+3])*sy),int(x0+(p[i]+p[i+2])*sx),int(y0+(p[i+1]+p[i+3])*sy))
-    mbox=(int(x0+p[10]*sx),int(y0+p[11]*sy),int(x0+(p[10]+p[12])*sx),int(y0+(p[11]+p[13])*sy))
+    mbox=(int(x0+p[12]*sx),int(y0+p[13]*sy),int(x0+(p[12]+p[14])*sx),int(y0+(p[13]+p[15])*sy))
+    mtap=(x0+(p[12]+p[14]/2)*sx,y0+(p[13]+p[15]*0.72)*sy)      # the mirror head sits in the lower part of its patch
     full=(x0,y0,x1,y1); res={}
     # wheels
     tap(*P(2,3)); time.sleep(1.5); a=shot(); time.sleep(0.4); b=shot()
-    res["wheel spin"]=diff(a,b,wbox(2))>1.0 and diff(a,b,wbox(6))>0.5
+    res["wheel spin"]=diff(a,b,wbox(2))>1.0 and diff(a,b,wbox(7))>0.5
     tap(*P(2,3)); time.sleep(5); a=shot(); time.sleep(0.4); b=shot()
     res["wheel stop"]=diff(a,b,wbox(2))<0.5
     # mirror
-    a=shot(); tap(x0+(p[10]+p[12]/2)*sx,y0+(p[11]+p[13]/2)*sy); time.sleep(1.2); b=shot()
+    a=shot(); tap(*mtap); time.sleep(1.2); b=shot()
     res["mirror fold"]=diff(a,b,mbox)>2.0
-    tap(x0+(p[10]+p[12]/2)*sx,y0+(p[11]+p[13]/2)*sy); time.sleep(1.2); c=shot()
+    tap(*mtap); time.sleep(1.2); c=shot()
     res["mirror open"]=diff(a,c,mbox)<1.5
-    # indicators (fog lamp)
-    fx,fy=x0+p[16]*sx,y0+p[17]*sy; fbox=(int(fx-25),int(fy-22),int(fx+25),int(fy+22))
+    # indicators: a tap on the fog lamp starts them; the strip on the mirror is one of the lamps that flash
+    fx,fy=x0+p[21]*sx,y0+p[22]*sy; fbox=mbox
     tap(fx,fy); frames=[]
-    for _ in range(5): frames.append(shot()); time.sleep(0.15)
-    res["indicator blink"]=max(diff(frames[0],f,fbox) for f in frames[1:])>4.0
+    for _ in range(8): frames.append(shot()); time.sleep(0.1)
+    res["indicator blink"]=max(diff(f,g,fbox) for f in frames for g in frames)>1.0
     tap(fx,fy); time.sleep(1.0); a=shot(); time.sleep(0.5); b=shot()
-    res["indicator stop"]=diff(a,b,fbox)<2.5
+    res["indicator stop"]=diff(a,b,fbox)<0.8
     # lights: tap the middle of the bonnet/windscreen, away from every other part
     hx,hy=x0+(x1-x0)*0.5,y0+(y1-y0)*0.30
     a=shot(); tap(hx,hy); time.sleep(1.0); b=shot(); tap(hx,hy); time.sleep(1.0); c=shot()

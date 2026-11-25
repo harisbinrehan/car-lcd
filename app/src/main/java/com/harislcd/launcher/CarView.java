@@ -14,9 +14,9 @@ import android.view.View;
 import android.view.animation.LinearInterpolator;
 
 /**
- * The car on the home screen. The picture itself never moves; three parts react to taps:
- * the wheels spin, the door mirror folds in and out, and anywhere else on the car switches the lights.
- * Left alone, the lights fade on and off by themselves.
+ * The car on the home screen. The picture itself never moves; parts of it react to taps: the wheels spin,
+ * the door mirror folds back and out again, a fog lamp starts the indicators, and anywhere else on the
+ * car switches the lights. Left alone, the lights fade on and off by themselves.
  */
 public class CarView extends View {
 
@@ -28,7 +28,9 @@ public class CarView extends View {
     private final Paint ring = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final RectF dst = new RectF();
     private final float[] p;
-    private Bitmap car, glow, wheelF, wheelR, mirror, mirrorBg, blink;
+    private Bitmap car, glow, wheelF, wheelR, mirror, mirrorLit, mirrorBg, blink;
+    private android.graphics.LightingColorFilter foldShade;
+    private int foldShadeFor = -1;
 
     private float lightAlpha = 0f;                     // 0 = as drawn, 1 = lights fully on
     private boolean lightsManual = false;
@@ -43,15 +45,12 @@ public class CarView extends View {
     private final Runnable resumeLights = () -> fadeLights(0f, () -> { lightsManual = false; lightCycle.start(); });
     private final Runnable stopWheels = () -> spinning = false;
 
-    private boolean blinking = false, blinkOn = false;
-    private final Runnable blinkTick = new Runnable() {
-        @Override public void run() {
-            if (!blinking) return;
-            blinkOn = !blinkOn;
-            invalidate();
-            postDelayed(this, 380);
-        }
-    };
+    // Indicators flash like a real flasher relay: about 85 times a minute, the bulb snapping on and
+    // dying away a little more slowly.
+    private static final long BLINK_MS = 700, BLINK_ON_MS = 350, BLINK_RISE_MS = 60, BLINK_FALL_MS = 170;
+    private boolean blinking = false;
+    private long blinkStart = 0;
+    private final Runnable blinkFrame = this::invalidate;
     private final Runnable stopBlink = this::stopIndicators;
 
     public CarView(Context c, AttributeSet a) {
@@ -66,6 +65,7 @@ public class CarView extends View {
         wheelF = load("wheel_f_" + theme);
         wheelR = load("wheel_r_" + theme);
         mirror = load("mirror_" + theme);
+        mirrorLit = load("mirrorlit_" + theme);
         mirrorBg = load("mirrorbg_" + theme);
         blink = load("blink_" + theme);
 
@@ -104,20 +104,8 @@ public class CarView extends View {
         canvas.drawBitmap(car, null, dst, paint);
 
         if (wheelAngle != 0f) {
-            drawWheel(canvas, wheelF, p[2], p[3], p[4], p[5], sx, sy);
-            drawWheel(canvas, wheelR, p[6], p[7], p[8], p[9], sx, sy);
-        }
-        if (fold > 0f && mirror != null && mirrorBg != null) {
-            float l = p[10] * sx, t = p[11] * sy, w = p[12] * sx, h = p[13] * sy;
-            dst.set(l, t, l + w, t + h);
-            paint.setAlpha(Math.round(255 * Math.min(1f, fold * 1.6f)));
-            canvas.drawBitmap(mirrorBg, null, dst, paint);          // what is behind the mirror
-            paint.setAlpha(255);
-            float hingeX = p[14] > 0.5f ? l + w * 0.86f : l + w * 0.14f;
-            canvas.save();
-            canvas.scale(1f - 0.62f * fold, 1f - 0.10f * fold, hingeX, t + h * 0.55f);
-            canvas.drawBitmap(mirror, null, dst, paint);
-            canvas.restore();
+            drawWheel(canvas, wheelF, p[2], p[3], p[4], p[5], p[6], sx, sy);
+            drawWheel(canvas, wheelR, p[7], p[8], p[9], p[10], p[11], sx, sy);
         }
         if (lightAlpha > 0f && glow != null) {
             dst.set(0, 0, getWidth(), getHeight());
@@ -125,23 +113,73 @@ public class CarView extends View {
             canvas.drawBitmap(glow, null, dst, paint);
         }
 
-        if (blinkOn && blink != null) {
+        float flash = blinkLevel();
+        if (flash > 0f && blink != null) {                          // the indicator sections of the headlamps
             dst.set(0, 0, getWidth(), getHeight());
-            paint.setAlpha(255);
+            paint.setAlpha(Math.round(255 * flash));
             canvas.drawBitmap(blink, null, dst, paint);
+        }
+        // The door mirror. Unfolded and dark it is simply part of the picture; it is drawn again here
+        // only while it is folded (swung back against the window) or its indicator strip is lit.
+        if ((fold > 0f || flash > 0f) && mirror != null) {
+            float l = p[12] * sx, t = p[13] * sy, w = p[14] * sx, h = p[15] * sy;
+            float hx = p[16] * sx, hy = p[17] * sy;
+            dst.set(l, t, l + w, t + h);
+            if (fold > 0f && mirrorBg != null) {
+                paint.setAlpha(Math.round(255 * Math.min(1f, fold * 8f)));
+                canvas.drawBitmap(mirrorBg, null, dst, paint);      // the door and glass behind it
+            }
+            canvas.save();
+            if (fold > 0f) {
+                float turn = (hx > l + w / 2f ? 1f : -1f) * p[18] * fold;   // the tip swings up and back
+                canvas.rotate(turn, hx, hy);
+                canvas.scale(1f - (1f - p[19]) * fold, 1f - 0.06f * fold, hx, hy);
+                int shade = 255 - Math.round(40 * fold);            // turned away from the light
+                if (shade != foldShadeFor) {
+                    foldShade = new android.graphics.LightingColorFilter(0xFF000000 | shade << 16 | shade << 8 | shade, 0);
+                    foldShadeFor = shade;
+                }
+                paint.setColorFilter(foldShade);
+                paint.setAlpha(255);
+                canvas.drawBitmap(mirror, null, dst, paint);
+            }
+            if (flash > 0f && mirrorLit != null) {
+                paint.setAlpha(Math.round(255 * flash));
+                canvas.drawBitmap(mirrorLit, null, dst, paint);
+            }
+            paint.setColorFilter(null);
+            canvas.restore();
         }
 
         if (spinning || wheelSpeed > 0f) stepWheels();
     }
 
-    /** The rim is stored as a flat circle; squash it back to the wheel's ellipse after rotating it. */
-    private void drawWheel(Canvas canvas, Bitmap disc, float cx, float cy, float rx, float ry, float sx, float sy) {
+    /** How bright the indicators are right now (0..1), and asks for the next frame when that is about to change. */
+    private float blinkLevel() {
+        if (!blinking) return 0f;
+        long t = (android.os.SystemClock.uptimeMillis() - blinkStart) % BLINK_MS;
+        removeCallbacks(blinkFrame);
+        if (t < BLINK_RISE_MS) { postInvalidateOnAnimation(); return t / (float) BLINK_RISE_MS; }
+        if (t < BLINK_ON_MS) { postDelayed(blinkFrame, BLINK_ON_MS - t); return 1f; }
+        if (t < BLINK_ON_MS + BLINK_FALL_MS) {
+            postInvalidateOnAnimation();
+            float k = 1f - (t - BLINK_ON_MS) / (float) BLINK_FALL_MS;
+            return k * k;
+        }
+        postDelayed(blinkFrame, BLINK_MS - t);
+        return 0f;
+    }
+
+    /** The rim is stored as a flat circle; squash it back to the wheel's leaning ellipse after rotating it. */
+    private void drawWheel(Canvas canvas, Bitmap disc, float cx, float cy, float rx, float ry, float lean, float sx, float sy) {
         if (disc == null) return;
         matrix.reset();
         matrix.postTranslate(-RAD, -RAD);
         matrix.postRotate(wheelAngle);
-        matrix.postScale(rx * sx / RAD, ry * sy / RAD);
-        matrix.postTranslate(cx * sx, cy * sy);
+        matrix.postScale(rx / RAD, ry / RAD);
+        matrix.postRotate(lean);
+        matrix.postTranslate(cx, cy);
+        matrix.postScale(sx, sy);
         paint.setAlpha(255);
         canvas.drawBitmap(disc, matrix, paint);
     }
@@ -172,13 +210,13 @@ public class CarView extends View {
         float x = e.getX() * p[0] / getWidth(), y = e.getY() * p[1] / getHeight();
         // the fog lamps in the bumper corners are the indicator switch
         boolean fog = false;
-        for (int i = 0; i < (int) p[15]; i++) fog |= inEllipse(x, y, p[16 + i * 2], p[17 + i * 2], 30f, 30f);
+        for (int i = 0; i < (int) p[20]; i++) fog |= inEllipse(x, y, p[21 + i * 2], p[22 + i * 2], 30f, 30f);
         // the tyre is part of the wheel as far as a finger is concerned, and fingers are not precise
         if (fog) {
             toggleIndicators();
-        } else if (inEllipse(x, y, p[2], p[3], p[4] * 1.7f, p[5] * 1.45f) || inEllipse(x, y, p[6], p[7], p[8] * 2.2f, p[9] * 1.45f)) {
+        } else if (inEllipse(x, y, p[2], p[3], p[4] * 1.7f, p[5] * 1.3f) || inEllipse(x, y, p[7], p[8], p[9] * 2.4f, p[10] * 1.3f)) {
             toggleWheels();
-        } else if (x > p[10] - p[12] * 0.2f && x < p[10] + p[12] * 1.2f && y > p[11] - p[13] * 0.3f && y < p[11] + p[13] * 1.3f) {
+        } else if (x > p[12] - p[14] * 0.15f && x < p[12] + p[14] * 1.15f && y > p[13] + p[15] * 0.2f && y < p[13] + p[15] * 1.15f) {
             toggleMirror();
         } else {
             toggleLights();
@@ -215,17 +253,15 @@ public class CarView extends View {
     public void toggleIndicators() {
         if (blinking) { stopIndicators(); return; }
         blinking = true;
-        blinkOn = false;
-        removeCallbacks(blinkTick);
+        blinkStart = android.os.SystemClock.uptimeMillis();
         removeCallbacks(stopBlink);
-        post(blinkTick);
+        invalidate();
         postDelayed(stopBlink, 30000);
     }
 
     private void stopIndicators() {
         blinking = false;
-        blinkOn = false;
-        removeCallbacks(blinkTick);
+        removeCallbacks(blinkFrame);
         removeCallbacks(stopBlink);
         invalidate();
     }

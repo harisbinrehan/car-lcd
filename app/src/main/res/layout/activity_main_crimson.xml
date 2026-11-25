@@ -34,7 +34,7 @@
 </LinearLayout>
 </LinearLayout>
 <FrameLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1">
-<com.harislcd.launcher.CarView android:id="@+id/car_view" android:layout_width="600dp" android:layout_height="400dp" android:contentDescription="Toyota Vitz" android:focusable="true" android:layout_gravity="center"/>
+<com.harislcd.launcher.CarView android:id="@+id/car_view" android:layout_width="537dp" android:layout_height="400dp" android:contentDescription="Toyota Vitz" android:focusable="true" android:layout_gravity="center"/>
 </FrameLayout>
 <LinearLayout android:layout_width="250dp" android:layout_height="match_parent" android:orientation="vertical" android:baselineAligned="false" >
 <LinearLayout android:id="@+id/tile_eq" android:layout_width="match_parent" android:layout_height="0dp" android:orientation="horizontal" android:baselineAligned="false" android:gravity="center_vertical" android:background="@drawable/tile_bg" android:clickable="true" android:focusable="true" android:layout_weight="1" android:paddingStart="34dp" android:layout_marginTop="0dp">
