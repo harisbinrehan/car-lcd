@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout android:layout_width="match_parent" android:layout_height="match_parent" xmlns:android="http://schemas.android.com/apk/res/android" android:background="@drawable/screen_bg" android:padding="14dp">
+<com.harislcd.launcher.CarView android:id="@+id/car_view" android:layout_width="744dp" android:layout_height="410dp" android:contentDescription="Toyota Vitz" android:focusable="true" android:layout_gravity="bottom|start" android:layout_marginStart="173dp" android:layout_marginBottom="73dp"/>
+<LinearLayout android:layout_width="match_parent" android:layout_height="104dp" android:orientation="horizontal" android:baselineAligned="false" android:layout_marginEnd="162dp">
+<LinearLayout android:layout_width="0dp" android:layout_height="match_parent" android:orientation="horizontal" android:baselineAligned="false"  android:background="@drawable/card_bg" android:gravity="center_vertical" android:paddingStart="20dp" android:paddingEnd="20dp" android:layout_weight="1.02">
+<FrameLayout android:layout_width="50dp" android:layout_height="50dp" android:background="@drawable/tile_bg">
+<ImageView android:id="@+id/img_weather" android:layout_width="28dp" android:layout_height="28dp" android:src="@drawable/ic_sun" android:layout_gravity="center"/>
+</FrameLayout>
+<LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="vertical" android:baselineAligned="false" android:layout_marginStart="16dp">
+<TextView android:id="@+id/txt_temp" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="--°" android:textSize="32sp" android:textColor="?attr/cFg" android:includeFontPadding="false" android:fontFamily="sans-serif-medium"/>
+<TextView android:id="@+id/txt_cond" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="" android:textSize="15sp" android:textColor="?attr/cSoft" android:includeFontPadding="false" />
+</LinearLayout>
+<Space android:layout_width="0dp" android:layout_height="1dp" android:layout_weight="1" />
+<LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="horizontal" android:baselineAligned="false" >
+<TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="High" android:textSize="14sp" android:textColor="?attr/cMuted" android:includeFontPadding="false" />
+<TextView android:id="@+id/txt_high" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="--°" android:textSize="14sp" android:textColor="?attr/cFg" android:includeFontPadding="false" android:layout_marginStart="6dp" android:fontFamily="sans-serif-medium"/>
+<TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Low" android:textSize="14sp" android:textColor="?attr/cMuted" android:includeFontPadding="false" android:layout_marginStart="16dp"/>
+<TextView android:id="@+id/txt_low" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="--°" android:textSize="14sp" android:textColor="?attr/cFg" android:includeFontPadding="false" android:layout_marginStart="6dp" android:fontFamily="sans-serif-medium"/>
+</LinearLayout>
+</LinearLayout>
+<LinearLayout android:id="@+id/np_root" android:layout_width="0dp" android:layout_height="match_parent" android:orientation="horizontal" android:baselineAligned="false" android:gravity="center_vertical" android:minHeight="64dp" android:background="@drawable/card_focus_bg" android:clickable="true" android:focusable="false" android:layout_weight="1.38" android:paddingStart="16dp" android:paddingEnd="8dp" android:layout_marginStart="14dp">
+<LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:orientation="vertical" android:baselineAligned="false" android:layout_weight="1" android:layout_marginStart="2dp" android:layout_marginEnd="6dp">
+<TextView android:id="@+id/np_title" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Nothing playing" android:textSize="19sp" android:textColor="?attr/cFg" android:maxLines="1" android:includeFontPadding="false" android:fontFamily="sans-serif-medium" android:singleLine="true" android:ellipsize="marquee" android:marqueeRepeatLimit="marquee_forever"/>
+<TextView android:id="@+id/np_sub" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Tap play to start" android:textSize="14sp" android:textColor="?attr/cMuted" android:maxLines="1" android:includeFontPadding="false" android:layout_marginTop="3dp" android:ellipsize="end"/>
+</LinearLayout>
+<ImageView android:id="@+id/np_prev" android:layout_width="52dp" android:layout_height="52dp" android:src="@drawable/ic_prev" android:padding="13dp" android:background="@drawable/focus_bg" android:nextFocusRight="@+id/np_play" android:clickable="true" android:focusable="true"/>
+<ImageView android:id="@+id/np_play" android:layout_width="58dp" android:layout_height="58dp" android:src="@drawable/ic_play" android:padding="15dp" android:background="@drawable/np_play_bg" android:layout_marginStart="4dp" android:layout_marginEnd="4dp" android:nextFocusLeft="@+id/np_prev" android:nextFocusRight="@+id/np_next" android:clickable="true" android:focusable="true"/>
+<ImageView android:id="@+id/np_next" android:layout_width="52dp" android:layout_height="52dp" android:src="@drawable/ic_next" android:padding="13dp" android:background="@drawable/focus_bg" android:nextFocusLeft="@+id/np_play" android:clickable="true" android:focusable="true"/>
+</LinearLayout>
+<LinearLayout android:layout_width="0dp" android:layout_height="match_parent" android:orientation="horizontal" android:baselineAligned="false"  android:background="@drawable/card_bg" android:gravity="center_vertical" android:paddingStart="22dp" android:paddingEnd="22dp" android:layout_marginStart="14dp" android:layout_weight="0.86">
+<TextView android:id="@+id/txt_speed" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="0" android:textSize="46sp" android:textColor="?attr/cFg" android:includeFontPadding="false" android:fontFamily="sans-serif-light"/>
+<TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="km/h" android:textSize="17sp" android:textColor="?attr/cMuted" android:includeFontPadding="false" android:layout_marginStart="8dp" android:fontFamily="sans-serif-medium"/>
+<Space android:layout_width="0dp" android:layout_height="1dp" android:layout_weight="1" />
+<com.harislcd.launcher.CompassView android:id="@+id/compass_view" android:layout_width="72dp" android:layout_height="72dp" />
+<LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="vertical" android:baselineAligned="false" android:gravity="center" android:layout_marginStart="14dp">
+<TextView android:id="@+id/txt_heading_card" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="--" android:textSize="26sp" android:textColor="?attr/cFg" android:includeFontPadding="false" android:fontFamily="sans-serif-light"/>
+<TextView android:id="@+id/txt_heading_deg" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="" android:textSize="15sp" android:textColor="?attr/cMuted" android:includeFontPadding="false" />
+</LinearLayout>
+</LinearLayout>
+</LinearLayout>
+<LinearLayout android:layout_width="148dp" android:layout_height="match_parent" android:orientation="vertical" android:baselineAligned="false" android:layout_gravity="end" android:layout_marginBottom="60dp">
+<LinearLayout android:id="@+id/tile_radio" android:layout_width="match_parent" android:layout_height="0dp" android:orientation="vertical" android:baselineAligned="false" android:gravity="center" android:background="@drawable/tile_bg" android:clickable="true" android:focusable="true" android:layout_weight="1" >
+<ImageView android:layout_width="32dp" android:layout_height="32dp" android:src="@drawable/ic_radio" />
+<TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Radio" android:textSize="15sp" android:textColor="?attr/cFg" android:includeFontPadding="false" android:layout_marginTop="9dp" android:fontFamily="sans-serif-medium"/>
+</LinearLayout>
+<LinearLayout android:id="@+id/tile_bt" android:layout_width="match_parent" android:layout_height="0dp" android:orientation="vertical" android:baselineAligned="false" android:gravity="center" android:background="@drawable/tile_bg" android:clickable="true" android:focusable="true" android:layout_weight="1" android:layout_marginTop="10dp">
+<ImageView android:layout_width="32dp" android:layout_height="32dp" android:src="@drawable/ic_bluetooth" />
+<TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Bluetooth" android:textSize="15sp" android:textColor="?attr/cFg" android:includeFontPadding="false" android:layout_marginTop="9dp" android:fontFamily="sans-serif-medium"/>
+</LinearLayout>
+<LinearLayout android:id="@+id/tile_auto" android:layout_width="match_parent" android:layout_height="0dp" android:orientation="vertical" android:baselineAligned="false" android:gravity="center" android:background="@drawable/tile_bg" android:clickable="true" android:focusable="true" android:layout_weight="1" android:layout_marginTop="10dp">
+<ImageView android:layout_width="32dp" android:layout_height="32dp" android:src="@drawable/ic_aa" />
+<TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Android Auto" android:textSize="15sp" android:textColor="?attr/cFg" android:includeFontPadding="false" android:layout_marginTop="9dp" android:fontFamily="sans-serif-medium"/>
+</LinearLayout>
+<LinearLayout android:id="@+id/tile_eq" android:layout_width="match_parent" android:layout_height="0dp" android:orientation="vertical" android:baselineAligned="false" android:gravity="center" android:background="@drawable/tile_bg" android:clickable="true" android:focusable="true" android:layout_weight="1" android:layout_marginTop="10dp">
+<ImageView android:layout_width="32dp" android:layout_height="32dp" android:src="@drawable/ic_eq" />
+<TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Equalizer" android:textSize="15sp" android:textColor="?attr/cFg" android:includeFontPadding="false" android:layout_marginTop="9dp" android:fontFamily="sans-serif-medium"/>
+</LinearLayout>
+<LinearLayout android:id="@+id/tile_youtube" android:layout_width="match_parent" android:layout_height="0dp" android:orientation="vertical" android:baselineAligned="false" android:gravity="center" android:background="@drawable/tile_bg" android:clickable="true" android:focusable="true" android:layout_weight="1" android:layout_marginTop="10dp">
+<ImageView android:layout_width="32dp" android:layout_height="32dp" android:src="@drawable/ic_youtube" />
+<TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="YouTube" android:textSize="15sp" android:textColor="?attr/cFg" android:includeFontPadding="false" android:layout_marginTop="9dp" android:fontFamily="sans-serif-medium"/>
+</LinearLayout>
+</LinearLayout>
+<LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="vertical" android:baselineAligned="false" android:layout_gravity="bottom|start" android:layout_marginStart="8dp">
+<LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="horizontal" android:baselineAligned="false" >
+<TextView android:id="@+id/txt_time" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="9:41" android:textSize="34sp" android:textColor="?attr/cFg" android:includeFontPadding="false" android:textStyle="bold"/>
+<TextView android:id="@+id/txt_ampm" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="PM" android:textSize="18sp" android:textColor="?attr/cMuted" android:includeFontPadding="false" android:layout_marginStart="7dp" android:fontFamily="sans-serif-medium"/>
+</LinearLayout>
+<TextView android:id="@+id/txt_date" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Wednesday, November 25" android:textSize="15sp" android:textColor="?attr/cMuted" android:includeFontPadding="false" android:letterSpacing="0.1"/>
+</LinearLayout>
+<LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="horizontal" android:baselineAligned="false" android:layout_gravity="bottom|end">
+<ImageView android:id="@+id/item_music" android:layout_width="46dp" android:layout_height="46dp" android:src="@drawable/ic_music" android:padding="10dp" android:background="@drawable/focus_bg" android:clickable="true" android:focusable="true" android:contentDescription="Music"/>
+<ImageView android:id="@+id/item_apps" android:layout_width="46dp" android:layout_height="46dp" android:src="@drawable/ic_apps" android:padding="10dp" android:background="@drawable/focus_bg" android:clickable="true" android:focusable="true" android:contentDescription="Apps"/>
+<ImageView android:id="@+id/item_theme" android:layout_width="46dp" android:layout_height="46dp" android:src="@drawable/ic_theme" android:padding="10dp" android:background="@drawable/focus_bg" android:clickable="true" android:focusable="true" android:contentDescription="Themes"/>
+<ImageView android:id="@+id/item_settings" android:layout_width="46dp" android:layout_height="46dp" android:src="@drawable/ic_settings" android:padding="10dp" android:background="@drawable/focus_bg" android:clickable="true" android:focusable="true" android:contentDescription="Settings"/>
+</LinearLayout>
+</FrameLayout>
