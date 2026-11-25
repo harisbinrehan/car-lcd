@@ -95,6 +95,39 @@ public class ThemesActivity extends AppCompatActivity {
         vlp.setMargins(0, 0, dp(14), 0);
         head.addView(ver, vlp);
 
+        // sends the app's diary (see Diag) so a bug can be looked at
+        TextView rep = new TextView(this);
+        rep.setText("Send report");
+        rep.setTextSize(16);
+        rep.setTextColor(fg);
+        rep.setGravity(Gravity.CENTER);
+        rep.setPadding(dp(18), 0, dp(18), 0);
+        GradientDrawable rb = new GradientDrawable();
+        rb.setCornerRadius(dp(24));
+        rb.setColor(card);
+        rb.setStroke(dp(1), hair);
+        GradientDrawable rf = new GradientDrawable();
+        rf.setCornerRadius(dp(24));
+        rf.setColor(card);
+        rf.setStroke(dp(3), fg);
+        android.graphics.drawable.StateListDrawable rs = new android.graphics.drawable.StateListDrawable();
+        rs.addState(new int[]{android.R.attr.state_focused}, rf);
+        rs.addState(new int[]{}, rb);
+        rep.setBackground(rs);
+        rep.setFocusable(true);
+        rep.setOnClickListener(v -> {
+            if (!rep.getText().toString().equals("Send report")) return;   // one is already on its way
+            rep.setText("Sending…");
+            Diag.send(this, (sent, err) -> {
+                rep.setText("Send report");
+                android.widget.Toast.makeText(getApplicationContext(), sent != null ? "Report sent (" + sent + ")"
+                        : "Couldn't send the report: " + err, android.widget.Toast.LENGTH_LONG).show();
+            });
+        });
+        LinearLayout.LayoutParams rlp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, dp(46));
+        rlp.setMargins(0, 0, dp(4), 0);
+        head.addView(rep, rlp);
+
         // light / dark switch: applies to whichever theme is chosen
         String[] labels = {"Auto (car lights)", "Light", "Dark"};
         for (int i = 0; i < ThemeStore.MODES.length; i++) {
@@ -123,6 +156,7 @@ public class ThemesActivity extends AppCompatActivity {
             lp.setMargins(dp(10), 0, 0, 0);
             head.addView(pill, lp);
             pill.setOnClickListener(v -> {
+                Diag.log("themes", "mode " + m);
                 ThemeStore.saveMode(this, m);
                 if (!ThemeStore.applyNight(this)) recreate();   // a real change recreates the page by itself
             });
@@ -179,6 +213,7 @@ public class ThemesActivity extends AppCompatActivity {
             tile.addView(name);
 
             tile.setOnClickListener(v -> {
+                Diag.log("themes", "theme " + t[0]);
                 ThemeStore.saveTheme(this, t[0]);
                 finish();   // the home screen rebuilds itself with the new theme when it comes back
             });

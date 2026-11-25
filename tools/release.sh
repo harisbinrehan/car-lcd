@@ -6,7 +6,8 @@
 #
 # It bumps versionCode by one and sets versionName, builds a signed release APK, commits and tags
 # the version, pushes, and creates a GitHub release with the APK attached as car-lcd-<code>.apk.
-# Needs: gh logged in, the signing key in ~/.carlcd (see CLAUDE.md), JAVA_HOME / ANDROID_SDK_ROOT.
+# Needs: gh logged in, the signing key and the report key in ~/.carlcd (see CLAUDE.md), JAVA_HOME /
+# ANDROID_SDK_ROOT.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -14,6 +15,8 @@ NAME="${1:?version name, e.g. 2.1}"
 NOTES="${2:?release notes}"
 GRADLE="${GRADLE:-gradle}"
 [ -f "$HOME/.carlcd/signing.properties" ] || { echo "signing key missing: ~/.carlcd/signing.properties"; exit 1; }
+# NO_REPORT_KEY=1 publishes without the report key on purpose (Send report then says it is not set up)
+[ -n "${NO_REPORT_KEY:-}" ] || grep -q '^token=.' "$HOME/.carlcd/reports.properties" 2>/dev/null || { echo "report key missing: ~/.carlcd/reports.properties (Send report would not work in this release)"; exit 1; }
 [ -z "$(git status --porcelain)" ] || { echo "commit or stash your changes first"; exit 1; }
 git rev-parse "v$NAME" >/dev/null 2>&1 && { echo "tag v$NAME already exists"; exit 1; }
 

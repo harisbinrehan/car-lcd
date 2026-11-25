@@ -39,6 +39,12 @@ button is remapped, so nothing in the unit's own software is changed.
   (any internet connection). Install now downloads, checks and installs it; Android asks to confirm.
   Themes page: "Check for updates". Publish a version with `tools/release.sh 2.1 "what's new"`.
 
+**Bug reports**
+- The app keeps a small log of its own (what was opened, theme and lights changes, errors, crashes;
+  never the GPS position). Nothing is sent by itself: "Send report" on the Themes page files it as an
+  issue in a private repo. To use this in your own build, point `Diag.REPO` at a private repo of yours
+  and put a token limited to that repo's issues in `~/.carlcd/reports.properties` (`token=...`).
+
 ## Apps it links to (edit in `MainActivity.java` if a package differs)
 | Tile | Target |
 |------|--------|

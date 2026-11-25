@@ -8,6 +8,13 @@ def signingProps = new Properties()
 def signingFile = new File(System.getProperty('user.home'), '.carlcd/signing.properties')
 if (signingFile.exists()) signingFile.withInputStream { signingProps.load(it) }
 
+// "Send report" files an issue in the private reports repo with this key (see CLAUDE.md). It also lives
+// outside the repo; without it the app builds fine and the button says reports are not set up.
+def reportProps = new Properties()
+def reportFile = new File(System.getProperty('user.home'), '.carlcd/reports.properties')
+if (reportFile.exists()) reportFile.withInputStream { reportProps.load(it) }
+def reportKey = (reportProps['token'] ?: '').trim().getBytes('UTF-8').collect { String.format('%02x', (it ^ 0x5A) & 0xFF) }.join()
+
 android {
     namespace 'com.harislcd.launcher'
     compileSdk 34
@@ -18,6 +25,11 @@ android {
         targetSdk 33
         versionCode 3
         versionName "2.1"
+        buildConfigField 'String', 'REPORT_KEY', "\"${reportKey}\""
+    }
+
+    buildFeatures {
+        buildConfig true
     }
 
     signingConfigs {

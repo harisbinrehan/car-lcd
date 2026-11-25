@@ -92,6 +92,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         super.onCreate(savedInstanceState);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         setContentView(ThemeStore.layout(appliedMode));
+        Diag.log("home", "open, theme " + appliedMode + ", mode " + ThemeStore.mode(this) + ", " + (ThemeStore.isDark(this) ? "dark" : "light"));
 
         txtTime = findViewById(R.id.txt_time);
         txtAmpm = findViewById(R.id.txt_ampm);
@@ -120,6 +121,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                         .setClassName(PKG_SETTINGS, PKG_SETTINGS + ".Settings$DevelopmentSettingsDashboardActivity")
                         .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
             } catch (Exception e) {
+                Diag.err("home", "developer options", e);
                 Toast.makeText(this, "Developer options not available", Toast.LENGTH_SHORT).show();
             }
             return true;
@@ -187,22 +189,25 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private void openPlayer() {
         MediaController p = player;
         if (p == null) { launch(PKG_MUSIC); return; }
+        String pkg = p.getPackageName();
         try {
             android.app.PendingIntent pi = p.getSessionActivity();
-            if (pi != null) { pi.send(); return; }
-        } catch (Exception ignored) { }
-        String pkg = p.getPackageName();
+            if (pi != null) { pi.send(); Diag.log("player", "open " + pkg + " by its own screen"); return; }
+        } catch (Exception e) { Diag.err("player", "own screen of " + pkg, e); }
         Intent i = getPackageManager().getLaunchIntentForPackage(pkg);
         if (i != null) {
-            try { startActivity(i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)); return; } catch (Exception ignored) { }
+            try { startActivity(i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)); Diag.log("player", "open " + pkg); return; }
+            catch (Exception e) { Diag.err("player", "open " + pkg, e); }
         }
         if (pkg.startsWith("com.carletter") || pkg.equals(PKG_AUTO)) {
             try {
                 startActivity(new Intent(Intent.ACTION_MAIN).setClassName(PKG_AUTO, PKG_AUTO + ".AndroidAuto")
                         .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+                Diag.log("player", "open Android Auto for " + pkg);
                 return;
-            } catch (Exception ignored) { }
+            } catch (Exception e) { Diag.err("player", "Android Auto for " + pkg, e); }
         }
+        Diag.log("player", "no screen for " + pkg + ", opening Music");
         launch(PKG_MUSIC);
     }
 
@@ -223,8 +228,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 if (score > bestScore) { bestScore = score; best = c; }
             }
             if (bestScore == 0) best = null;
+            Diag.logChange("np-access", "now-playing access ok");
         } catch (SecurityException e) {
             best = null;   // notification access has not been granted to the launcher
+            Diag.logChange("np-access", "no now-playing access (notification listener not allowed)");
         }
         player = best;
         String title = "Nothing playing", sub = "Tap play to open Music";
@@ -247,6 +254,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         String key = title + "|" + sub + "|" + playing;
         if (key.equals(npShown)) return;
         npShown = key;
+        Diag.log("np", best == null ? "nothing playing" : best.getPackageName() + (playing ? " playing: " : " paused: ") + title);
         npTitle.setText(title);
         set(npSub, sub);
         if (npPlay != null) npPlay.setImageResource(playing ? R.drawable.ic_pause : R.drawable.ic_play);
@@ -274,7 +282,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             Intent i = new Intent(Intent.ACTION_MAIN).setClassName(pkg, cls).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             try {
                 startActivity(i);
+                Diag.log("open", cls);
             } catch (Exception e) {
+                Diag.err("open", cls, e);
                 launch(pkg);
             }
         });
@@ -283,13 +293,16 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private void launch(String pkg) {
         Intent i = getPackageManager().getLaunchIntentForPackage(pkg);
         if (i == null) {
+            Diag.log("open", pkg + " is not installed");
             Toast.makeText(this, "App not installed: " + pkg, Toast.LENGTH_SHORT).show();
             return;
         }
         i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         try {
             startActivity(i);
+            Diag.log("open", pkg);
         } catch (Exception e) {
+            Diag.err("open", pkg, e);
             Toast.makeText(this, "Can't open that app", Toast.LENGTH_SHORT).show();
         }
     }
@@ -298,7 +311,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         Intent i = getPackageManager().getLaunchIntentForPackage(PKG_SETTINGS);
         if (i == null) i = new Intent(Settings.ACTION_SETTINGS);
         i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        try { startActivity(i); } catch (Exception ignored) {}
+        try { startActivity(i); Diag.log("open", "settings"); } catch (Exception e) { Diag.err("open", "settings", e); }
     }
 
     /**
@@ -312,7 +325,12 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         boolean now = androidx.appcompat.app.AppCompatDelegate.getDefaultNightMode()
                 == androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_YES;
         if (want == now) { lightsStreak = 0; return; }
-        if (++lightsStreak >= 2) { lightsStreak = 0; ThemeStore.applyNight(this); }
+        if (++lightsStreak >= 2) {
+            lightsStreak = 0;
+            Diag.log("lights", "switching to " + (want ? "dark" : "light") + ", mode " + ThemeStore.mode(this)
+                    + ", lights signal " + (ThemeStore.lightsOn(this) ? 1 : 0));
+            ThemeStore.applyNight(this);
+        }
     }
 
     // ---------- clock ----------
@@ -357,7 +375,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             if (locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
                 locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 5000, 0f, this);
             }
-        } catch (SecurityException ignored) {}
+            Diag.log("gps", "listening, gps " + (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER) ? "on" : "off"));
+        } catch (SecurityException e) { Diag.err("gps", "listening", e); }
     }
 
     @Override
@@ -365,6 +384,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         lat = location.getLatitude();
         lon = location.getLongitude();
         if (LocationManager.GPS_PROVIDER.equals(location.getProvider())) {
+            Diag.logChange("gps-fix", "gps has a fix");   // the position itself is never written down
             float kmh = steadySpeed(location.hasSpeed() ? location.getSpeed() * 3.6f : 0f);
             if (shownSpeed != (int) kmh) {
                 shownSpeed = (int) kmh;
@@ -424,12 +444,14 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             @Override
             public void onWeather(int tempC, int highC, int lowC, String condition, int weatherCode) {
                 weatherLoaded = true;
+                Diag.logChange("weather", "loaded");
                 set(txtTemp, tempC + "°");
                 set(txtCond, condition);
                 set(txtHigh, highC + "°");
                 set(txtLow, lowC + "°");
             }
             @Override public void onError() {
+                Diag.logChange("weather", "not loaded, will keep trying");
                 // no network yet (common just after the unit boots): try again shortly
                 ui.postDelayed(() -> { if (!weatherLoaded) fetchWeather(); }, 20000);
             }
@@ -442,6 +464,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     protected void onResume() {
         super.onResume();
         if (!ThemeStore.theme(this).equals(appliedMode)) { recreate(); return; }   // changed on the Themes page
+        Diag.log("home", "shown");
         getContentResolver().registerContentObserver(
                 Settings.System.getUriFor(ThemeStore.LIGHTS_SETTING), false, lightsObserver);
         ui.post(clockTick);
@@ -454,6 +477,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     @Override
     protected void onPause() {
         super.onPause();
+        Diag.log("home", "left");
         getContentResolver().unregisterContentObserver(lightsObserver);
         ui.removeCallbacks(clockTick);
         if (sensorManager != null) sensorManager.unregisterListener(this);

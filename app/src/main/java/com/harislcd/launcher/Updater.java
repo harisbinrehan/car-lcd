@@ -139,6 +139,7 @@ final class Updater {
             } catch (Exception e) {
                 err = e.getMessage() == null ? e.getClass().getSimpleName() : e.getMessage();
             }
+            Diag.log("update", err != null ? "check failed: " + err : newer != null ? "version " + newer.name + " (" + newer.code + ") is available" : "up to date");
             final Release fn = newer;
             final String fe = err;
             MAIN.post(() -> r.done(fn, fe));
@@ -207,7 +208,9 @@ final class Updater {
     /** Downloads, checks and hands the APK to Android's installer (which asks the driver to confirm). */
     static void install(Activity a, Release r) {
         if (busy) return;
+        Diag.log("update", "install " + r.name + " (" + r.code + ") asked for");
         if (Build.VERSION.SDK_INT >= 26 && !a.getPackageManager().canRequestPackageInstalls()) {
+            Diag.log("update", "installs from this app are not allowed yet, opening the setting");
             saveWaiting(a, r);
             Toast.makeText(a, "Turn on \"Allow from this source\", then press Back. The update continues by itself.", Toast.LENGTH_LONG).show();
             try {
@@ -229,8 +232,10 @@ final class Updater {
                 download(r.url, f, r.size);
                 verify(app, f, r.code);
                 startInstaller(app, f);
+                Diag.log("update", "downloaded and checked, handed to the installer");
             } catch (Exception e) {
                 err = e.getMessage() == null ? e.getClass().getSimpleName() : e.getMessage();
+                Diag.log("update", "failed: " + e);
             } finally {
                 busy = false;
             }
@@ -297,6 +302,7 @@ final class Updater {
         @Override
         public void onReceive(Context c, Intent i) {
             int status = i.getIntExtra(PackageInstaller.EXTRA_STATUS, PackageInstaller.STATUS_FAILURE);
+            Diag.log("update", "installer status " + status + " " + i.getStringExtra(PackageInstaller.EXTRA_STATUS_MESSAGE));
             if (status == PackageInstaller.STATUS_PENDING_USER_ACTION) {
                 Intent confirm = i.getParcelableExtra(Intent.EXTRA_INTENT);
                 if (confirm != null) c.startActivity(confirm.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
@@ -312,6 +318,7 @@ final class Updater {
         @Override
         public void onReceive(Context c, Intent i) {
             if (!Intent.ACTION_MY_PACKAGE_REPLACED.equals(i.getAction())) return;
+            Diag.log("update", "updated to " + installedName(c) + " (" + installedCode(c) + ")");
             try {
                 c.startActivity(new Intent(c, MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
             } catch (Exception ignored) { }

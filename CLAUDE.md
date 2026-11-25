@@ -97,6 +97,21 @@ theme previews live in `drawable-nodpi/` (dark previews in `drawable-night-nodpi
 - Testing without publishing: debug builds read a `upd_api` pref (URL of a local `latest.json`), and
   the debug manifest allows cleartext so the emulator can use `http://10.0.2.2:<port>/`.
 
+## Bug reports ("Send report" on the Themes page)
+- `Diag.java` keeps the app's own diary in the app's files folder: `diag.log` (rolls to `diag.1.log` at
+  200 KB) and `crash.txt` (uncaught exceptions, written by the handler set in `App.java`). It records
+  what was opened, theme/lights switches, Now Playing changes, update steps and errors. **Never log the
+  GPS position.** Use `Diag.log`, `Diag.err`, and `Diag.logChange` for anything checked every second.
+- Nothing is sent until the owner taps **Send report**; that files one issue (unit, clock and state
+  summary + crashes + the last ~42 KB of log) in the **private** repo `harisbinrehan/car-lcd-reports`.
+  Read reports with `gh issue list -R harisbinrehan/car-lcd-reports` / `gh issue view <n> -R ...`.
+- **Report key**: `~/.carlcd/reports.properties` with `token=<fine-grained token: that repo only, Issues
+  read/write>`. `app/build.gradle` puts it in `BuildConfig.REPORT_KEY` (lightly scrambled). It can be
+  pulled out of the public APK, which is why it must stay limited to creating issues in that one repo.
+  Without the file the app still builds and the button says reports are not set up.
+- Testing: debug builds read a `rep_api` pref (URL of a local server that answers 201 `{"number":1}`).
+  `adb shell am crash com.harislcd.launcher` exercises the crash capture.
+
 ## Generated files — do not hand-edit
 `tools/gen/` regenerates them; change the generator and rerun (run from `tools/gen`, it reads
 `sizes.json` etc. from the current folder):
@@ -142,4 +157,5 @@ machine-specific paths.
 - Add the **Qibla** marker (Kaaba icon on the compass ring pointing to Mecca from GPS position).
 - Install the latest build on the unit once over adb (needs the current wireless debugging port);
   from then on updates come from GitHub Releases.
-- Remote diagnostics ("know what's happening in the app") — not built; owner to choose how.
+- Remote diagnostics: built as "Send report" (see Bug reports above). The owner still has to create the
+  report key and the first release carrying it has to reach the unit.
