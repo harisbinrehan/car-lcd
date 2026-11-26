@@ -45,6 +45,13 @@
             android:configChanges="orientation|screenSize|keyboardHidden|navigation" />
 
         <activity
+            android:name=".CompassActivity"
+            android:launchMode="singleTop"
+            android:exported="false"
+            android:screenOrientation="sensorLandscape"
+            android:configChanges="orientation|screenSize|keyboardHidden|navigation" />
+
+        <activity
             android:windowSoftInputMode="stateHidden|adjustPan"
             android:name=".AppsActivity"
             android:launchMode="singleTop"

@@ -35,9 +35,13 @@ public class CompassView extends View {
     private float qibla = Float.NaN; // bearing of Mecca from here, degrees; NaN until a position is known
     private double qiblaLat = 999, qiblaLon = 999;
     private int shadedFor = -1;
+    private final Paint ring = new Paint(Paint.ANTI_ALIAS_FLAG);
 
     public CompassView(Context c, AttributeSet a) {
         super(c, a);
+        if (android.os.Build.VERSION.SDK_INT >= 26) setDefaultFocusHighlightEnabled(false);   // we draw our own ring
+        ring.setStyle(Paint.Style.STROKE);
+        ring.setColor(ThemeStore.color(c, R.attr.cAccent));
         edge.setStyle(Paint.Style.STROKE);
         edge.setColor(0xFF9A9A9A);
         face.setColor(0xFFFFFFFF);
@@ -63,11 +67,26 @@ public class CompassView extends View {
         invalidate();
     }
 
+    /** Bearing of Mecca from the last position given, in degrees; NaN while no position is known. */
+    public float qibla() { return qibla; }
+
+    @Override
+    protected void onFocusChanged(boolean gainFocus, int direction, android.graphics.Rect previouslyFocusedRect) {
+        super.onFocusChanged(gainFocus, direction, previouslyFocusedRect);
+        invalidate();
+    }
+
     @Override
     protected void onDraw(Canvas canvas) {
         float cx = getWidth() / 2f, cy = getHeight() / 2f;
         float r = Math.min(getWidth(), getHeight()) / 2f - 1f;
         if (r <= 0) return;
+        if (isFocused()) {                                   // remote control focus ring, around the dial
+            float sw = 3f * getResources().getDisplayMetrics().density;
+            ring.setStrokeWidth(sw);
+            canvas.drawCircle(cx, cy, r - sw / 2f, ring);
+            r -= sw * 1.5f;
+        }
         boolean big = r / getResources().getDisplayMetrics().density >= 50f;   // 100dp and up shows the numbers
 
         // white rim, silver band, white face

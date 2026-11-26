@@ -106,7 +106,22 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         txtHigh = findViewById(R.id.txt_high);
         txtLow = findViewById(R.id.txt_low);
         compass = findViewById(R.id.compass_view);
-        if (compass != null) compass.setPosition(lat, lon);   // Qibla marker; the city-level default is close enough until GPS has a fix
+        if (compass != null) {
+            compass.setPosition(lat, lon);   // Qibla marker; the city-level default is close enough until GPS has a fix
+            // a tap on the compass (or on the heading next to it) opens the big one
+            View.OnClickListener big = v -> startActivity(new Intent(this, CompassActivity.class)
+                    .putExtra(CompassActivity.HEADING, shownHeading).putExtra(CompassActivity.KNOWN, headingKnown)
+                    .putExtra(CompassActivity.LAT, lat).putExtra(CompassActivity.LON, lon));
+            compass.setFocusable(true);
+            compass.setContentDescription("Compass");
+            compass.setOnClickListener(big);
+            // the heading text is a second place to touch, not a second stop for the remote
+            for (TextView t : new TextView[]{txtHeadingCard, txtHeadingDeg}) {
+                if (t == null) continue;
+                t.setOnClickListener(big);
+                t.setFocusable(false);
+            }
+        }
         setupNowPlaying();
 
         // rail
@@ -432,7 +447,12 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     @Override public void onAccuracyChanged(Sensor sensor, int accuracy) {}
 
+    private float shownHeading = 0f;
+    private boolean headingKnown = false;      // false until the sensor or a moving GPS fix has given one
+
     private void showHeading(float deg) {
+        shownHeading = deg;
+        headingKnown = true;
         if (compass != null) compass.setHeading(deg);
         int d = Math.round(deg) % 360;
         set(txtHeadingDeg, d + "°");

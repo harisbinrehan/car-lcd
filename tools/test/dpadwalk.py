@@ -10,7 +10,7 @@ def focused():
         if re.search(r'\{[0-9a-f]+ \S+ .F',line):
             g=re.search(r'app:id/(\w+)',line); return g.group(1) if g else "?"
     return None
-WANT={"item_music","item_apps","item_theme","item_settings","tile_radio","tile_bt","tile_auto","tile_eq","tile_youtube","np_prev","np_play","np_next","car_view"}
+WANT={"item_music","item_apps","item_theme","item_settings","tile_radio","tile_bt","tile_auto","tile_eq","tile_youtube","np_prev","np_play","np_next","car_view","compass_view"}
 random.seed(7); allok=True
 for t in sys.argv[1:]:
     subprocess.run([S+"/emu.sh","set",t,"dark"]); time.sleep(6)
@@ -33,5 +33,5 @@ for t in sys.argv[1:]:
         if WANT<=seen: break
     if chain is False: print(f"{t:8s} playback buttons did not chain correctly",flush=True); allok=False
     miss=sorted(WANT-seen); allok&=not miss
-    print(f"{t:8s}", "all 13 controls reachable" if not miss else "NOT REACHED: "+", ".join(miss), flush=True)
+    print(f"{t:8s}", f"all {len(WANT)} controls reachable" if not miss else "NOT REACHED: "+", ".join(miss), flush=True)
 print("crashes:",sh("logcat","-d","-s","AndroidRuntime:E").count("FATAL EXCEPTION")); print("DONE", "OK" if allok else "GAPS")
