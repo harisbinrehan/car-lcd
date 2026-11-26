@@ -23,8 +23,8 @@ android {
         applicationId "com.harislcd.launcher"
         minSdk 24
         targetSdk 33
-        versionCode 12
-        versionName "2.9"
+        versionCode 13
+        versionName "2.10"
         buildConfigField 'String', 'REPORT_KEY', "\"${reportKey}\""
     }
 
