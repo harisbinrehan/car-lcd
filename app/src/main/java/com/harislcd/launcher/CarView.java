@@ -29,6 +29,15 @@ public class CarView extends View {
     private final RectF dst = new RectF();
     private final float[] p;
     private Bitmap car, glow, wheelF, wheelR, mirror, mirrorLit, mirrorBg, blink;
+    // Turning the car: a sideways drag steps through the owner's photos (CarTurn). -1 = the theme's own
+    // picture with its moving parts; after a while without a touch the car turns back to it.
+    private int turn = -1;
+    private Bitmap turnBitmap;
+    private float downX, downY, turnAnchorX;
+    private boolean dragging;
+    private final Runnable turnBack = () -> setTurn(-1);
+    private static final long TURN_BACK_MS = 20000;
+
     private Bitmap plate;                              // the owner's plate text, drawn flat and then laid on the blank plate
     private String plateText = "";
     private final Matrix plateMatrix = new Matrix();
@@ -101,6 +110,16 @@ public class CarView extends View {
             ring.setStrokeWidth(3f * getResources().getDisplayMetrics().density);
             float in = ring.getStrokeWidth();
             canvas.drawRoundRect(in, in, getWidth() - in, getHeight() - in, 28f, 28f, ring);
+        }
+        if (turn >= 0 && turnBitmap != null) {               // a photo from another side: just the picture and the plate
+            float[] v = CarTurn.VIEWS[turn];
+            float k = Math.min(getWidth() / v[0], getHeight() / v[1]);
+            float ox = (getWidth() - v[0] * k) / 2f, oy = (getHeight() - v[1] * k) / 2f;
+            dst.set(ox, oy, ox + v[0] * k, oy + v[1] * k);
+            paint.setAlpha(255);
+            canvas.drawBitmap(turnBitmap, null, dst, paint);
+            drawPlateAt(canvas, v, 2, k, k, ox, oy);
+            return;
         }
         float sx = getWidth() / p[0], sy = getHeight() / p[1];
         dst.set(0, 0, getWidth(), getHeight());
@@ -188,14 +207,40 @@ public class CarView extends View {
 
     /** Lays the plate text over the blank plate, following the angle the picture was taken from. */
     private void drawPlate(Canvas canvas, float sx, float sy) {
-        int at = 21 + 2 * (int) p[20];
-        if (plate == null || p.length < at + 8 || (p[at] == 0f && p[at + 4] == 0f)) return;
+        drawPlateAt(canvas, p, 21 + 2 * (int) p[20], sx, sy, 0f, 0f);
+    }
+
+    private void drawPlateAt(Canvas canvas, float[] q, int at, float sx, float sy, float ox, float oy) {
+        if (plate == null || q.length < at + 8 || (q[at] == 0f && q[at + 4] == 0f)) return;
         float w = plate.getWidth(), h = plate.getHeight();
         plateMatrix.setPolyToPoly(new float[]{0, 0, w, 0, w, h, 0, h}, 0,
-                new float[]{p[at] * sx, p[at + 1] * sy, p[at + 2] * sx, p[at + 3] * sy,
-                        p[at + 4] * sx, p[at + 5] * sy, p[at + 6] * sx, p[at + 7] * sy}, 0, 4);
+                new float[]{ox + q[at] * sx, oy + q[at + 1] * sy, ox + q[at + 2] * sx, oy + q[at + 3] * sy,
+                        ox + q[at + 4] * sx, oy + q[at + 5] * sy, ox + q[at + 6] * sx, oy + q[at + 7] * sy}, 0, 4);
         paint.setAlpha(255);
         canvas.drawBitmap(plate, plateMatrix, paint);
+    }
+
+    /** Shows the car from another side (0..5, see CarTurn), or -1 for the theme's own picture. */
+    void setTurn(int view) {
+        removeCallbacks(turnBack);
+        if (view >= 0) postDelayed(turnBack, TURN_BACK_MS);
+        if (view == turn) return;
+        turn = view;
+        Bitmap old = turnBitmap;
+        turnBitmap = view < 0 ? null : load("turn_" + view);
+        if (old != null) old.recycle();
+        if (view >= 0) {                                    // the moving parts belong to the theme's picture
+            spinning = false;
+            wheelSpeed = 0f;
+            stopIndicators();
+        }
+        invalidate();
+    }
+
+    /** One step round the car. From the theme's picture the first step goes to the nearest side view. */
+    private void stepTurn(int dir) {
+        int n = CarTurn.VIEWS.length;
+        setTurn(turn < 0 ? (dir > 0 ? 0 : n - 1) : ((turn + dir) % n + n) % n);
     }
 
     /** How bright the indicators are right now (0..1), and asks for the next frame when that is about to change. */
@@ -249,8 +294,41 @@ public class CarView extends View {
 
     @Override
     public boolean onTouchEvent(MotionEvent e) {
-        if (e.getAction() == MotionEvent.ACTION_DOWN) return true;
-        if (e.getAction() != MotionEvent.ACTION_UP) return super.onTouchEvent(e);
+        float slop = 24f * getResources().getDisplayMetrics().density;
+        switch (e.getAction()) {
+            case MotionEvent.ACTION_DOWN:
+                downX = turnAnchorX = e.getX();
+                downY = e.getY();
+                dragging = false;
+                return true;
+            case MotionEvent.ACTION_MOVE:
+                if (!dragging && Math.abs(e.getX() - downX) > slop && Math.abs(e.getX() - downX) > Math.abs(e.getY() - downY)) {
+                    dragging = true;
+                    turnAnchorX = e.getX();
+                    getParent().requestDisallowInterceptTouchEvent(true);
+                    stepTurn(e.getX() > downX ? -1 : 1);      // the car follows the finger
+                }
+                float stepPx = getWidth() / 3f;                 // a short swipe is one step; a long drag keeps turning
+                while (dragging && Math.abs(e.getX() - turnAnchorX) >= stepPx) {
+                    int dir = e.getX() > turnAnchorX ? -1 : 1;
+                    turnAnchorX += dir < 0 ? stepPx : -stepPx;
+                    stepTurn(dir);
+                }
+                return true;
+            case MotionEvent.ACTION_CANCEL:
+                dragging = false;
+                return true;
+            case MotionEvent.ACTION_UP:
+                break;
+            default:
+                return super.onTouchEvent(e);
+        }
+        if (dragging) { dragging = false; return true; }
+        if (turn >= 0) {                                        // a tap on a side view goes back to the theme's picture
+            setTurn(-1);
+            performClick();
+            return true;
+        }
         float x = e.getX() * p[0] / getWidth(), y = e.getY() * p[1] / getHeight();
         // the fog lamps in the bumper corners are the indicator switch
         boolean fog = false;

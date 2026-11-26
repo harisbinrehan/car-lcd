@@ -73,6 +73,12 @@ Developer options on the unit: long-press **Settings** in this launcher.
 - `CarView` — the static car with tap zones: lights toggle (auto 9 s cycle resumes 10 s after a tap),
   mirror fold (the head swings up about its hinge against the window), wheels spin, indicators flash
   with a relay rhythm (700 ms period, quick rise, slower fade; tap a fog lamp). D-pad OK toggles lights.
+- **Turning the car:** a sideways drag on the car steps through six photos of the owner's car
+  (`turn_0..5.png`: front, front right, right, rear, left, front left; sizes and plate corners in
+  `CarTurn.java`, sources with the plates blanked in `tools/gen/turn/`). A side view shows only the photo
+  and the plate (no lights, mirror, wheels or indicators); a tap, or 20 s without a touch, returns to the
+  theme's own picture. The photos were cut out with macOS subject detection (Vision); blank the plate in
+  any new photo before it goes in the repo.
 - **Number plate:** the pictures ship blank (public repo). The owner types the plate on the Themes page
   ("Number plate"); it is kept in prefs (`plate`) on the unit only, never logged, and `CarView` draws it
   on the blank plate through the four `plate` corners in `geo_<picture>.json` (perspective warp).
@@ -190,7 +196,6 @@ machine-specific paths.
 - No `Co-Authored-By: Claude` (or any Claude attribution) in commit messages or PRs.
 
 ## Open requests (as of 2026-11-26)
-- Rotate the car with a finger drag (needs the car angle images from the owner, or a 3D approach).
 - Clock on the unit is wrong — investigate (time zone / format on the unit vs. the app).
 - Remote diagnostics: built as "Send report" (see Bug reports above). The owner still has to create the
   report key and the first release carrying it has to reach the unit.

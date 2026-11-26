@@ -22,6 +22,7 @@ button is remapped, so nothing in the unit's own software is changed.
 - **The car** is a still image with moving parts:
   - tap the car: lights on / off; the automatic light cycle resumes after 10 seconds
   - tap the mirror: it folds back against the window / opens again
+  - drag sideways across the car: it turns to show the other sides (six photos); tap it to turn back
   - tap a tyre: the wheels spin (stop on a second tap, or after 10 seconds)
   - tap a fog lamp: the indicators flash, in the headlamps and on the mirror (stop on a second tap,
     or after 30 seconds)
