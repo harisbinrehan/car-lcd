@@ -119,7 +119,7 @@
                     android:layout_gravity="center" android:layout_marginBottom="64dp"
                     android:background="@drawable/halo" />
                 <com.harislcd.launcher.CarView android:id="@+id/car_view"
-                    android:layout_width="520dp" android:layout_height="298dp"
+                    android:layout_width="520dp" android:layout_height="292dp"
                     android:layout_gravity="center" android:layout_marginBottom="64dp"
                     android:focusable="true" android:contentDescription="Toyota Vitz" />
                 <LinearLayout android:id="@+id/np_root" android:layout_width="match_parent" android:layout_height="96dp" android:orientation="horizontal" android:baselineAligned="false" android:gravity="center_vertical" android:minHeight="88dp" android:background="@drawable/card_focus_bg" android:clickable="true" android:focusable="false" android:layout_gravity="bottom" android:paddingStart="14dp" android:paddingEnd="8dp">

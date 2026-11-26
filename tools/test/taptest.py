@@ -42,9 +42,9 @@ for t in themes:
     tap(*P(2,3)); time.sleep(5); a=shot(); time.sleep(0.4); b=shot()
     res["wheel stop"]=diff(a,b,wbox(2))<0.5
     # mirror
-    a=shot(); tap(*mtap); time.sleep(1.2); b=shot()
+    a=shot(); tap(*mtap); time.sleep(2.0); b=shot()
     res["mirror fold"]=diff(a,b,mbox)>2.0
-    tap(*mtap); time.sleep(1.2); c=shot()
+    tap(*mtap); time.sleep(2.0); c=shot()
     res["mirror open"]=diff(a,c,mbox)<1.5
     # indicators: a tap on the fog lamp starts them; the strip on the mirror is one of the lamps that flash
     fx,fy=x0+p[21]*sx,y0+p[22]*sy; fbox=mbox

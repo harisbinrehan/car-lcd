@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout android:layout_width="match_parent" android:layout_height="match_parent" xmlns:android="http://schemas.android.com/apk/res/android" android:background="@drawable/screen_bg" android:padding="14dp">
-<com.harislcd.launcher.CarView android:id="@+id/car_view" android:layout_width="744dp" android:layout_height="410dp" android:contentDescription="Toyota Vitz" android:focusable="true" android:layout_gravity="bottom|start" android:layout_marginStart="173dp" android:layout_marginBottom="73dp"/>
+<com.harislcd.launcher.CarView android:id="@+id/car_view" android:layout_width="730dp" android:layout_height="410dp" android:contentDescription="Toyota Vitz" android:focusable="true" android:layout_gravity="bottom|start" android:layout_marginStart="180dp" android:layout_marginBottom="73dp"/>
 <LinearLayout android:layout_width="match_parent" android:layout_height="104dp" android:orientation="horizontal" android:baselineAligned="false" android:layout_marginEnd="162dp">
 <LinearLayout android:layout_width="0dp" android:layout_height="match_parent" android:orientation="horizontal" android:baselineAligned="false"  android:background="@drawable/card_bg" android:gravity="center_vertical" android:paddingStart="20dp" android:paddingEnd="20dp" android:layout_weight="1.02">
 <FrameLayout android:layout_width="50dp" android:layout_height="50dp" android:background="@drawable/tile_bg">

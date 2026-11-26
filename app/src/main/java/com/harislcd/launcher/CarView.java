@@ -21,6 +21,8 @@ import android.view.animation.LinearInterpolator;
 public class CarView extends View {
 
     private static final int RAD = 72;                 // rim discs are stored as 144 px circles
+    // The folded mirror: this share of the generated swing as tilt, its tip this much smaller, this much darker (of 255).
+    private static final float FOLD_LIFT = 0.23f, FOLD_TAPER = 0.86f, FOLD_SHADE = 30f;
     private static final long IDLE_MS = 10000;         // after this long without a tap, things go back to automatic
 
     private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG);
@@ -29,25 +31,22 @@ public class CarView extends View {
     private final RectF dst = new RectF();
     private final float[] p;
     private Bitmap car, glow, wheelF, wheelR, mirror, mirrorLit, mirrorBg, blink;
-    // Turning the car: a sideways drag steps through the owner's photos (CarTurn). -1 = the theme's own
-    // picture with its moving parts; after a while without a touch the car turns back to it.
-    private int turn = -1;
-    private Bitmap turnBitmap;
-    private float downX, downY, turnAnchorX;
-    private boolean dragging;
-    private final Runnable turnBack = () -> setTurn(-1);
-    private static final long TURN_BACK_MS = 20000;
-
     private Bitmap plate;                              // the owner's plate text, drawn flat and then laid on the blank plate
     private String plateText = "";
     private final Matrix plateMatrix = new Matrix();
     private android.graphics.LightingColorFilter foldShade;
     private int foldShadeFor = -1;
+    private final Matrix foldMatrix = new Matrix();
+    private final float[] foldSrc = new float[8], foldDst = new float[8];
 
     private float lightAlpha = 0f;                     // 0 = as drawn, 1 = lights fully on
     private boolean lightsManual = false;
     private float wheelAngle = 0f, wheelSpeed = 0f;    // degrees, degrees per second
     private boolean spinning = false;
+    private float driveKmh = 0f;                       // the car's real speed; the wheels turn in proportion to it
+    // Degrees a second for each km/h. Directly proportional, but geared down from the real thing: a real
+    // wheel at 60 km/h turns nine times a second, which a screen can only show as a blur or as going backwards.
+    private static final float DEG_PER_KMH = 7f;
     private long lastFrame = 0;
     private float fold = 0f;                           // 0 = mirror out, 1 = folded in
 
@@ -111,16 +110,6 @@ public class CarView extends View {
             float in = ring.getStrokeWidth();
             canvas.drawRoundRect(in, in, getWidth() - in, getHeight() - in, 28f, 28f, ring);
         }
-        if (turn >= 0 && turnBitmap != null) {               // a photo from another side: just the picture and the plate
-            float[] v = CarTurn.VIEWS[turn];
-            float k = Math.min(getWidth() / v[0], getHeight() / v[1]);
-            float ox = (getWidth() - v[0] * k) / 2f, oy = (getHeight() - v[1] * k) / 2f;
-            dst.set(ox, oy, ox + v[0] * k, oy + v[1] * k);
-            paint.setAlpha(255);
-            canvas.drawBitmap(turnBitmap, null, dst, paint);
-            drawPlateAt(canvas, v, 2, k, k, ox, oy);
-            return;
-        }
         float sx = getWidth() / p[0], sy = getHeight() / p[1];
         dst.set(0, 0, getWidth(), getHeight());
         paint.setAlpha(255);
@@ -155,10 +144,25 @@ public class CarView extends View {
             }
             canvas.save();
             if (fold > 0f) {
-                float turn = (hx > l + w / 2f ? 1f : -1f) * p[18] * fold;   // the tip swings up and back
-                canvas.rotate(turn, hx, hy);
-                canvas.scale(1f - (1f - p[19]) * fold, 1f - 0.06f * fold, hx, hy);
-                int shade = 255 - Math.round(40 * fold);            // turned away from the light
+                // A power-fold mirror turns about an upright pin at the hinge until the head lies along the
+                // window. Seen from outside the head gets shorter (not thin: squeezed further it turns into a
+                // blob), its far end moves away and so looks a little smaller, and it follows the window line.
+                float side = hx > l + w / 2f ? -1f : 1f;            // which way the head points from the hinge
+                float wide = 1f - (1f - p[19]) * fold;
+                double lift = Math.toRadians(-side * p[18] * FOLD_LIFT * fold);
+                float cos = (float) Math.cos(lift), sin = (float) Math.sin(lift);
+                for (int i = 0; i < 4; i++) {
+                    float x = i == 0 || i == 3 ? l : l + w, y = i < 2 ? t : t + h;
+                    foldSrc[i * 2] = x;
+                    foldSrc[i * 2 + 1] = y;
+                    float far = Math.max(0f, side * (x - hx)) / w;  // 0 at the hinge, 1 at the tip
+                    float dx = (x - hx) * wide, dy = (y - hy) * (1f - (1f - FOLD_TAPER) * fold * far);
+                    foldDst[i * 2] = hx + dx * cos - dy * sin;
+                    foldDst[i * 2 + 1] = hy + dx * sin + dy * cos;
+                }
+                foldMatrix.setPolyToPoly(foldSrc, 0, foldDst, 0, 4);
+                canvas.concat(foldMatrix);
+                int shade = 255 - Math.round(FOLD_SHADE * fold);    // its face turns away from the light
                 if (shade != foldShadeFor) {
                     foldShade = new android.graphics.LightingColorFilter(0xFF000000 | shade << 16 | shade << 8 | shade, 0);
                     foldShadeFor = shade;
@@ -175,7 +179,7 @@ public class CarView extends View {
             canvas.restore();
         }
 
-        if (spinning || wheelSpeed > 0f) stepWheels();
+        if (spinning || driveKmh > 0f || wheelSpeed > 0f) stepWheels();
     }
 
     /** Picks up the plate text again whenever the screen comes back (it is typed on the Themes page). */
@@ -220,28 +224,6 @@ public class CarView extends View {
         canvas.drawBitmap(plate, plateMatrix, paint);
     }
 
-    /** Shows the car from another side (0..5, see CarTurn), or -1 for the theme's own picture. */
-    void setTurn(int view) {
-        removeCallbacks(turnBack);
-        if (view >= 0) postDelayed(turnBack, TURN_BACK_MS);
-        if (view == turn) return;
-        turn = view;
-        Bitmap old = turnBitmap;
-        turnBitmap = view < 0 ? null : load("turn_" + view);
-        if (old != null) old.recycle();
-        if (view >= 0) {                                    // the moving parts belong to the theme's picture
-            spinning = false;
-            wheelSpeed = 0f;
-            stopIndicators();
-        }
-        invalidate();
-    }
-
-    /** One step round the car. From the theme's picture the first step goes to the nearest side view. */
-    private void stepTurn(int dir) {
-        int n = CarTurn.VIEWS.length;
-        setTurn(turn < 0 ? (dir > 0 ? 0 : n - 1) : ((turn + dir) % n + n) % n);
-    }
 
     /** How bright the indicators are right now (0..1), and asks for the next frame when that is about to change. */
     private float blinkLevel() {
@@ -277,9 +259,9 @@ public class CarView extends View {
         long now = System.nanoTime();
         float dt = lastFrame == 0 ? 0.016f : Math.min(0.05f, (now - lastFrame) / 1e9f);
         lastFrame = now;
-        float target = spinning ? 420f : 0f;
+        float target = driveKmh > 0f ? driveKmh * DEG_PER_KMH : spinning ? 420f : 0f;   // driving wins over a tap
         wheelSpeed += (target - wheelSpeed) * Math.min(1f, dt * 2.2f);          // ease up and down
-        if (!spinning && wheelSpeed < 4f) { wheelSpeed = 0f; lastFrame = 0; return; }
+        if (target == 0f && wheelSpeed < 4f) { wheelSpeed = 0f; lastFrame = 0; return; }
         wheelAngle = (wheelAngle + wheelSpeed * dt) % 360f;
         if (wheelAngle == 0f) wheelAngle = 0.01f;
         postInvalidateOnAnimation();
@@ -294,41 +276,8 @@ public class CarView extends View {
 
     @Override
     public boolean onTouchEvent(MotionEvent e) {
-        float slop = 24f * getResources().getDisplayMetrics().density;
-        switch (e.getAction()) {
-            case MotionEvent.ACTION_DOWN:
-                downX = turnAnchorX = e.getX();
-                downY = e.getY();
-                dragging = false;
-                return true;
-            case MotionEvent.ACTION_MOVE:
-                if (!dragging && Math.abs(e.getX() - downX) > slop && Math.abs(e.getX() - downX) > Math.abs(e.getY() - downY)) {
-                    dragging = true;
-                    turnAnchorX = e.getX();
-                    getParent().requestDisallowInterceptTouchEvent(true);
-                    stepTurn(e.getX() > downX ? -1 : 1);      // the car follows the finger
-                }
-                float stepPx = getWidth() / 3f;                 // a short swipe is one step; a long drag keeps turning
-                while (dragging && Math.abs(e.getX() - turnAnchorX) >= stepPx) {
-                    int dir = e.getX() > turnAnchorX ? -1 : 1;
-                    turnAnchorX += dir < 0 ? stepPx : -stepPx;
-                    stepTurn(dir);
-                }
-                return true;
-            case MotionEvent.ACTION_CANCEL:
-                dragging = false;
-                return true;
-            case MotionEvent.ACTION_UP:
-                break;
-            default:
-                return super.onTouchEvent(e);
-        }
-        if (dragging) { dragging = false; return true; }
-        if (turn >= 0) {                                        // a tap on a side view goes back to the theme's picture
-            setTurn(-1);
-            performClick();
-            return true;
-        }
+        if (e.getAction() == MotionEvent.ACTION_DOWN) return true;
+        if (e.getAction() != MotionEvent.ACTION_UP) return super.onTouchEvent(e);
         float x = e.getX() * p[0] / getWidth(), y = e.getY() * p[1] / getHeight();
         // the fog lamps in the bumper corners are the indicator switch
         boolean fog = false;
@@ -405,6 +354,15 @@ public class CarView extends View {
     }
 
     /** Tap a wheel: they spin. Tap again, or wait ten seconds: they coast to a stop. */
+    /** The car's speed from GPS: the wheels turn in proportion to it, and stand still when it is zero. */
+    public void setSpeed(float kmh) {
+        kmh = Math.max(0f, kmh);
+        if (kmh == driveKmh) return;
+        if (driveKmh == 0f && wheelSpeed == 0f) lastFrame = 0;
+        driveKmh = kmh;
+        invalidate();
+    }
+
     public void toggleWheels() {
         removeCallbacks(stopWheels);
         spinning = !spinning;
@@ -416,7 +374,8 @@ public class CarView extends View {
     public void toggleMirror() {
         if (foldAnim != null) foldAnim.cancel();
         foldAnim = ValueAnimator.ofFloat(fold, fold < 0.5f ? 1f : 0f);
-        foldAnim.setDuration(450);
+        foldAnim.setDuration(1100);                         // a real mirror motor takes about a second
+        foldAnim.setInterpolator(new android.view.animation.AccelerateDecelerateInterpolator());
         foldAnim.addUpdateListener(an -> { fold = (float) an.getAnimatedValue(); invalidate(); });
         foldAnim.start();
     }

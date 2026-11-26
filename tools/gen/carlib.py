@@ -26,6 +26,9 @@ PICTURES = ("silver", "sky", "noir", "amber", "crimson", "forest", "violet", "go
 THEMES = {p: p for p in PICTURES}; THEMES["classic"] = "violet"
 # themes added later reuse one of the nine pictures
 THEMES.update(nordic="gold", midnight="noir", mocha="sky", carbon="crimson")
+# 2026-11-26: the owner chose one car for every theme, the "forest" picture. The other pictures and their
+# geometry stay in this folder; to give a theme its own picture again, take it out of this line.
+THEMES = {k: "forest" for k in list(THEMES)}
 # the slot each theme's layout gives the car (dp); the car with its shadow margins is fitted inside it
 BOX = {"silver": (590, 430), "sky": (760, 410), "noir": (740, 450), "amber": (690, 380), "crimson": (640, 400),
        "forest": (680, 380), "violet": (700, 400), "gold": (620, 400), "ivory": (640, 400), "classic": (520, 300),

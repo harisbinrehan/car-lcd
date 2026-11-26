@@ -73,12 +73,13 @@ Developer options on the unit: long-press **Settings** in this launcher.
 - `CarView` — the static car with tap zones: lights toggle (auto 9 s cycle resumes 10 s after a tap),
   mirror fold (the head swings up about its hinge against the window), wheels spin, indicators flash
   with a relay rhythm (700 ms period, quick rise, slower fade; tap a fog lamp). D-pad OK toggles lights.
-- **Turning the car:** a sideways drag on the car steps through six photos of the owner's car
-  (`turn_0..5.png`: front, front right, right, rear, left, front left; sizes and plate corners in
-  `CarTurn.java`, sources with the plates blanked in `tools/gen/turn/`). A side view shows only the photo
-  and the plate (no lights, mirror, wheels or indicators); a tap, or 20 s without a touch, returns to the
-  theme's own picture. The photos were cut out with macOS subject detection (Vision); blank the plate in
-  any new photo before it goes in the repo.
+- **Wheels and speed:** `CarView.setSpeed(kmh)` (called from `MainActivity.onLocationChanged`) turns the
+  wheels in direct proportion to the GPS speed, 7 degrees a second per km/h, and stops them at 0. That is
+  geared down on purpose: at real wheel speed the spokes blur or appear to run backwards.
+- **No rotation for now.** 2.8 turned the car through six photos on a sideways drag; the owner had it
+  removed in 2.9 and wants it back only as a proper 3D turntable once that is ready and approved. The
+  work for it is outside this repo: a photogrammetry scan of the real car in `~/Desktop/Projects/vitz-scan`
+  (Apple Object Capture, `capture.swift`) and a hand-built Blender model in `~/Desktop/Projects/vitz-3d-model`.
 - **Number plate:** the pictures ship blank (public repo). The owner types the plate on the Themes page
   ("Number plate"); it is kept in prefs (`plate`) on the unit only, never logged, and `CarView` draws it
   on the blank plate through the four `plate` corners in `geo_<picture>.json` (perspective warp).
@@ -146,8 +147,8 @@ theme previews live in `drawable-nodpi/` (dark previews in `drawable-night-nodpi
   has its geometry in `geo_<picture>.json`, in that picture's pixels (lamps, indicator sections, fog
   lamps, wheels, mirror outline, hinge and fill directions; the format is described at the top of
   `carlib.py`, which also holds the shared image code). `THEMES` in `carlib.py` says which picture a
-  theme shows and `BOX` the slot it gets: the nine older themes have their own picture, classic shares
-  violet's, and nordic / midnight / mocha / carbon reuse gold / noir / sky / crimson. `cut_premium.png`
+  theme shows and `BOX` the slot it gets. Since 2.9 **every theme shows the "forest" picture** (one line
+  at the end of `THEMES`); the other eight pictures and their geometry stay as spares. `cut_premium.png`
   + `geo_premium.json` (the single studio picture 2.3 to 2.5 used) are kept as a spare. Needs Pillow,
   numpy, opencv.
 - `cars.py <res>` → `car_<theme>.png` (lamps **off**, derived) and `lights_<theme>.png` (the picture's real
@@ -186,8 +187,9 @@ machine-specific paths.
 ## Product rules from the owner
 - Keep the apps they use: Radio, Bluetooth, Android Auto, Equalizer, YouTube, Music, Apps, Themes, Settings.
 - Every feature must work in **every** theme and in both light and dark.
-- Car is static; only parts move (lights, mirrors, wheels, indicators). Use the owner's own car pictures:
-  the nine from the mockups, one per theme. The single "premium" studio picture was tried in 2.3 to 2.5
+- Car is static; only parts move (lights, mirrors, wheels, indicators). One car everywhere: on 2026-11-26
+  the owner chose the "forest" picture for all themes ("one car model"). Before that each theme had its own
+  of the nine mockup pictures. The single "premium" studio picture was tried in 2.3 to 2.5
   and the owner asked for the previous pictures back (they liked the 2.3 lights, mirror and indicators,
   which are kept). Don't swap in other car art, don't mirror a picture.
 - Large touch targets and fonts (used while driving); nothing clipped; 12-hour clock.

@@ -406,6 +406,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             if (shownSpeed != (int) kmh) {
                 shownSpeed = (int) kmh;
                 set(txtSpeed, String.valueOf(shownSpeed));
+                CarView car = findViewById(R.id.car_view);
+                if (car != null) car.setSpeed(shownSpeed);   // the wheels turn as fast as the car goes
             }
             // Head units often have no magnetometer: use the GPS direction of travel instead.
             if (rotation == null && location.hasBearing() && kmh > 3f) showHeading(location.getBearing());
