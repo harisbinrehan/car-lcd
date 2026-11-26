@@ -27,6 +27,40 @@ public class ThemesActivity extends AppCompatActivity {
         Updater.continueIfWaiting(this);   // back from allowing installs
     }
 
+    /** Asks for the plate text. It is kept on this unit only and never written to the log. */
+    private void askPlate() {
+        final android.widget.EditText in = new android.widget.EditText(this);
+        in.setText(ThemeStore.plate(this));
+        in.setSelection(in.getText().length());
+        in.setTextSize(28);
+        in.setSingleLine(true);
+        in.setHint("e.g. ABC 123");
+        in.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS
+                | android.text.InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
+        in.setFilters(new android.text.InputFilter[]{new android.text.InputFilter.LengthFilter(12), new android.text.InputFilter.AllCaps()});
+        android.widget.FrameLayout box = new android.widget.FrameLayout(this);
+        box.setPadding(dp(24), dp(8), dp(24), 0);
+        box.addView(in);
+        android.app.AlertDialog dlg = new android.app.AlertDialog.Builder(this)
+                .setTitle("Number plate shown on the car")
+                .setMessage("Stays on this unit. Leave it empty for a blank plate.")
+                .setView(box)
+                .setPositiveButton("Save", (d, w) -> {
+                    ThemeStore.savePlate(this, in.getText().toString());
+                    Diag.log("themes", ThemeStore.plate(this).isEmpty() ? "plate cleared" : "plate set");
+                    android.widget.Toast.makeText(this, ThemeStore.plate(this).isEmpty() ? "Plate is blank" : "Plate saved",
+                            android.widget.Toast.LENGTH_SHORT).show();
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+        for (int which : new int[]{android.app.AlertDialog.BUTTON_POSITIVE, android.app.AlertDialog.BUTTON_NEGATIVE}) {
+            android.widget.Button b = dlg.getButton(which);
+            if (b == null) continue;
+            b.setTextSize(19);
+            b.setMinHeight(dp(56));
+        }
+    }
+
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         final String current = ThemeStore.theme(this), mode = ThemeStore.mode(this);
@@ -60,6 +94,31 @@ public class ThemesActivity extends AppCompatActivity {
         title.setPadding(dp(10), 0, 0, 0);
         head.addView(title);
         head.addView(new View(this), new LinearLayout.LayoutParams(0, 1, 1f));
+
+        // the owner's number plate: the pictures are blank, the text typed here is drawn on the car
+        TextView plate = new TextView(this);
+        plate.setText("Number plate");
+        plate.setTextSize(16);
+        plate.setTextColor(fg);
+        plate.setGravity(Gravity.CENTER);
+        plate.setPadding(dp(18), 0, dp(18), 0);
+        GradientDrawable nb = new GradientDrawable();
+        nb.setCornerRadius(dp(28));
+        nb.setColor(card);
+        nb.setStroke(dp(1), hair);
+        GradientDrawable nf = new GradientDrawable();
+        nf.setCornerRadius(dp(28));
+        nf.setColor(card);
+        nf.setStroke(dp(3), fg);
+        android.graphics.drawable.StateListDrawable ns = new android.graphics.drawable.StateListDrawable();
+        ns.addState(new int[]{android.R.attr.state_focused}, nf);
+        ns.addState(new int[]{}, nb);
+        plate.setBackground(ns);
+        plate.setFocusable(true);
+        plate.setOnClickListener(v -> askPlate());
+        LinearLayout.LayoutParams nlp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, dp(56));
+        nlp.setMargins(0, 0, dp(14), 0);
+        head.addView(plate, nlp);
 
         // version + manual update check
         TextView ver = new TextView(this);

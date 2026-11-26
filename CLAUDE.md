@@ -73,6 +73,9 @@ Developer options on the unit: long-press **Settings** in this launcher.
 - `CarView` — the static car with tap zones: lights toggle (auto 9 s cycle resumes 10 s after a tap),
   mirror fold (the head swings up about its hinge against the window), wheels spin, indicators flash
   with a relay rhythm (700 ms period, quick rise, slower fade; tap a fog lamp). D-pad OK toggles lights.
+- **Number plate:** the pictures ship blank (public repo). The owner types the plate on the Themes page
+  ("Number plate"); it is kept in prefs (`plate`) on the unit only, never logged, and `CarView` draws it
+  on the blank plate through the four `plate` corners in `geo_<picture>.json` (perspective warp).
 - `CarParts` — **generated** per-theme geometry (leaning wheel ellipses, mirror patch, hinge and fold
   angle, fog lamp tap points). The float layout is documented in the file; `taptest.py` reads it too.
 - `CompassView` — the owner's reference design, identical in every theme **and in both light and dark**

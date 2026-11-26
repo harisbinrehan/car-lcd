@@ -82,6 +82,7 @@ def values(P, m, box):
              fx(mi["hinge"][0]), fy(mi["hinge"][1]), mi["fold_deg"], mi["fold_scale"]]
     vals += [len(G["fogs"])]
     for F in G["fogs"]: vals += [fx(F["core"][0]), fy(F["core"][1])]
+    for x, y in G.get("plate", [[0, 0]] * 4): vals += [fx(x) if x else 0, fy(y) if y else 0]   # blank plate: TL, TR, BR, BL
     return vals
 
 if __name__ == "__main__":
@@ -107,7 +108,8 @@ final class CarParts {
      * In picture pixels: width, height; front rim (cx, cy, rx, ry, lean in degrees); rear rim (the same five);
      * mirror patch (left, top, width, height); mirror hinge (x, y); how far the mirror swings when it folds
      * (degrees) and how much shorter it looks folded; number of fog lamps (the indicator tap points) and
-     * their centres (x, y).
+     * their centres (x, y); then the four corners of the blank number plate (top left, top right, bottom
+     * right, bottom left; all zero if the picture has none), where the owner's own plate text is drawn.
      */
     static float[] of(String theme) {
         switch (theme) {

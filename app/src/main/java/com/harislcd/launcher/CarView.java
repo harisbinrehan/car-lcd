@@ -29,6 +29,9 @@ public class CarView extends View {
     private final RectF dst = new RectF();
     private final float[] p;
     private Bitmap car, glow, wheelF, wheelR, mirror, mirrorLit, mirrorBg, blink;
+    private Bitmap plate;                              // the owner's plate text, drawn flat and then laid on the blank plate
+    private String plateText = "";
+    private final Matrix plateMatrix = new Matrix();
     private android.graphics.LightingColorFilter foldShade;
     private int foldShadeFor = -1;
 
@@ -68,6 +71,7 @@ public class CarView extends View {
         mirrorLit = load("mirrorlit_" + theme);
         mirrorBg = load("mirrorbg_" + theme);
         blink = load("blink_" + theme);
+        setPlate(ThemeStore.plate(c));
 
         // automatic lights: off, fade on, hold, fade off (9 seconds a round)
         lightCycle.setDuration(9000);
@@ -102,6 +106,7 @@ public class CarView extends View {
         dst.set(0, 0, getWidth(), getHeight());
         paint.setAlpha(255);
         canvas.drawBitmap(car, null, dst, paint);
+        drawPlate(canvas, sx, sy);
 
         if (wheelAngle != 0f) {
             drawWheel(canvas, wheelF, p[2], p[3], p[4], p[5], p[6], sx, sy);
@@ -152,6 +157,45 @@ public class CarView extends View {
         }
 
         if (spinning || wheelSpeed > 0f) stepWheels();
+    }
+
+    /** Picks up the plate text again whenever the screen comes back (it is typed on the Themes page). */
+    @Override
+    public void onWindowFocusChanged(boolean hasWindowFocus) {
+        super.onWindowFocusChanged(hasWindowFocus);
+        if (hasWindowFocus) setPlate(ThemeStore.plate(getContext()));
+    }
+
+    void setPlate(String text) {
+        text = text == null ? "" : text.trim();
+        if (text.equals(plateText)) return;
+        plateText = text;
+        plate = null;
+        if (!text.isEmpty()) {
+            int w = 440, h = 210;                           // about the shape of the plate in the pictures
+            plate = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
+            Paint t = new Paint(Paint.ANTI_ALIAS_FLAG);
+            t.setColor(0xF0101010);
+            t.setTextAlign(Paint.Align.CENTER);
+            t.setTypeface(android.graphics.Typeface.create("sans-serif-condensed", android.graphics.Typeface.BOLD));
+            t.setTextSize(h * 0.62f);
+            float tw = t.measureText(text);
+            if (tw > w * 0.86f) t.setTextSize(t.getTextSize() * w * 0.86f / tw);     // long plates shrink to fit
+            new Canvas(plate).drawText(text, w / 2f, h / 2f - (t.descent() + t.ascent()) / 2f, t);
+        }
+        invalidate();
+    }
+
+    /** Lays the plate text over the blank plate, following the angle the picture was taken from. */
+    private void drawPlate(Canvas canvas, float sx, float sy) {
+        int at = 21 + 2 * (int) p[20];
+        if (plate == null || p.length < at + 8 || (p[at] == 0f && p[at + 4] == 0f)) return;
+        float w = plate.getWidth(), h = plate.getHeight();
+        plateMatrix.setPolyToPoly(new float[]{0, 0, w, 0, w, h, 0, h}, 0,
+                new float[]{p[at] * sx, p[at + 1] * sy, p[at + 2] * sx, p[at + 3] * sy,
+                        p[at + 4] * sx, p[at + 5] * sy, p[at + 6] * sx, p[at + 7] * sy}, 0, 4);
+        paint.setAlpha(255);
+        canvas.drawBitmap(plate, plateMatrix, paint);
     }
 
     /** How bright the indicators are right now (0..1), and asks for the next frame when that is about to change. */

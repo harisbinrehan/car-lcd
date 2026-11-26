@@ -56,6 +56,14 @@ final class ThemeStore {
 
     static String mode(Context c) { return prefs(c).getString("mode", "auto"); }
 
+    /**
+     * The text for the car's number plate. The pictures ship with a blank plate (the app and its source are
+     * public); the owner types their own on the Themes page and it stays on this unit only. Never log it.
+     */
+    static String plate(Context c) { return prefs(c).getString("plate", ""); }
+
+    static void savePlate(Context c, String text) { prefs(c).edit().putString("plate", text == null ? "" : text.trim()).apply(); }
+
     static void saveMode(Context c, String mode) { prefs(c).edit().putString("mode", mode).apply(); }
 
     static int style(String theme) {

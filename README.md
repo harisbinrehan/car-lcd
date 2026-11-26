@@ -31,6 +31,8 @@ button is remapped, so nothing in the unit's own software is changed.
 **Themes page** (Themes button on Home and on the Apps page)
 - 14 themes, each with its own layout: Classic, Crimson, Ivory, Gold, Forest, Violet, Silver, Sky,
   Noir, Amber, Nordic, Midnight, Mocha, Carbon. Each card shows a preview of that theme.
+- **Number plate**: the car pictures have a blank plate. Type your own here and it is drawn on the car;
+  it stays on your unit.
 - Every theme has a light and a dark version. Mode: **Auto (car lights)**, **Light**, **Dark**.
   Auto follows the parking lights: lights off = light, lights on = dark.
 
