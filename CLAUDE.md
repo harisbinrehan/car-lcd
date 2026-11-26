@@ -67,7 +67,7 @@ Developer options on the unit: long-press **Settings** in this launcher.
   blip doesn't flip the theme). GPS speed is smoothed (`steadySpeed`) to stop 0/1 flicker.
   Weather from Open-Meteo (`WeatherClient`, no API key). Now Playing via
   `MediaSessionManager.getActiveSessions` + `MediaListener` (a NotificationListenerService).
-- `ThemeStore` — 10 themes x light/dark; modes `auto` / `light` / `dark`; prefs file `carlcd`
+- `ThemeStore` — 14 themes x light/dark; modes `auto` / `light` / `dark`; prefs file `carlcd`
   (keys `theme`, `mode`, `favourites`); maps theme to style and layout.
 - `Scale` — overrides density so every screen behaves like 1280x648 dp; fontScale fixed at 1.
 - `CarView` — the static car with tap zones: lights toggle (auto 9 s cycle resumes 10 s after a tap),
@@ -78,6 +78,10 @@ Developer options on the unit: long-press **Settings** in this launcher.
 - `CompassView` — the owner's reference design, identical in every theme **and in both light and dark**
   (white rim, silver band, white face, red N, long orange/red needle = heading, N up). Sizes under
   100 dp drop the degree numbers. `setPosition(lat, lon)` places the **Kaaba (Qibla) marker** on the rim.
+  Focusable (draws its own round focus ring); a tap on it or on the heading text opens `CompassActivity`.
+- `CompassActivity` — the big compass: the same dial at 520 dp, the heading in large letters, the Qibla
+  bearing and "Turn left/right N°". Starts from the heading and position the home screen passes in, then
+  listens to GPS (and the rotation sensor where there is one) itself. A tap on the dial or Back closes it.
 - `ThemesActivity` — theme cards with previews + mode pills. `AppsActivity` — all apps, search,
   favourites (star tap, touch-hold, or hold OK on a remote).
 
@@ -92,8 +96,12 @@ theme previews live in `drawable-nodpi/` (dark previews in `drawable-night-nodpi
   2.3 have no `latest.json`). A release must carry `car-lcd-<versionCode>.apk` and `latest.json`
   (`{code, name, notes, url, size}`, written by `tools/release.sh`); if the code is higher than the
   installed one, a dialog offers it (Install now / Later = 12 h snooze).
-  Themes page has "Version x · Check for updates". The APK is verified (package, versionCode, same
-  signing certificate) and installed via `PackageInstaller`; Android shows its own confirm screen.
+  Themes page has "Version x · Check for updates". The download shows a progress dialog ("Hide" leaves
+  it running; Install now shows it again), **resumes** with an HTTP Range request after a dropped
+  connection and keeps the part in the cache folder (`update-<code>.apk`) between tries — the unit's
+  internet is slow (about 9 KB/s was measured) and a restart-from-zero download never finished. If it
+  gives up, a dialog offers "Try again". The APK is verified (package, versionCode, same signing
+  certificate) and installed via `PackageInstaller`; Android shows its own confirm screen.
 - First time only, Android asks to "Allow from this source"; the app is killed when that changes, so
   the pending release is kept in prefs (`upd_wait_*`) and the install continues on return.
 - After an update Android 11 won't let the app reopen itself (background activity start blocked);
@@ -125,16 +133,26 @@ theme previews live in `drawable-nodpi/` (dark previews in `drawable-night-nodpi
 ## Generated files — do not hand-edit
 `tools/gen/` regenerates them; change the generator and rerun (run from `tools/gen`, it reads
 `sizes.json` etc. from the current folder):
-- One car picture is used in every theme: `cut_premium.png` (the owner's studio picture, cut out, plate
-  blanked). Its geometry (lamps, indicator sections, wheels, mirror outline and hinge) is in `car.json`,
-  in that picture's pixels; `carlib.py` holds the shared image code. Needs Pillow, numpy, opencv.
+- Nine car pictures, `cut_<picture>.png` (cut out of the owner's mockups, plates blanked, lamps on). Each
+  has its geometry in `geo_<picture>.json`, in that picture's pixels (lamps, indicator sections, fog
+  lamps, wheels, mirror outline, hinge and fill directions; the format is described at the top of
+  `carlib.py`, which also holds the shared image code). `THEMES` in `carlib.py` says which picture a
+  theme shows and `BOX` the slot it gets: the nine older themes have their own picture, classic shares
+  violet's, and nordic / midnight / mocha / carbon reuse gold / noir / sky / crimson. `cut_premium.png`
+  + `geo_premium.json` (the single studio picture 2.3 to 2.5 used) are kept as a spare. Needs Pillow,
+  numpy, opencv.
 - `cars.py <res>` → `car_<theme>.png` (lamps **off**, derived) and `lights_<theme>.png` (the picture's real
-  lit pixels; fully faded in it is the original). The slot per theme is `BOX` in `cars.py`; the car is
-  taller than those slots, so it is height-limited and never wider than before.
+  lit pixels; fully faded in it is the original). Fog lamps are not lit; they are only the indicator
+  tap points.
 - `parts.py <res> <javaDir>` → `wheel_f/r`, `mirror`, `mirrorlit`, `mirrorbg`, `blink` overlays + `CarParts.java`.
   Indicators are the lamp's own pixels turned amber, not painted blobs; the fog lamps do not flash.
-- `layouts.py <res>` → `activity_main_<theme>.xml` for 9 themes and the stage block of the classic `activity_main.xml`.
-Theme previews are screenshots of the real screens from the emulator, cropped to 480x243.
+- `layouts.py <res>` → `activity_main_<theme>.xml` for 13 themes and the stage block of the classic `activity_main.xml`.
+  Icon-only buttons (`mini`) are 60 dp to touch; Now Playing uses 72 dp previous/next and an 84 dp play.
+Theme previews are screenshots of the real screens from the emulator (`sweep.sh light|dark <themes>`),
+with the 24 px status bar and 48 px navigation bar cropped off and scaled to 480x243; light ones go in
+`drawable-nodpi/`, dark ones in `drawable-night-nodpi/`. Redo them whenever a layout or car changes.
+Adding a theme: colours in both `theme_colors.xml`, a style in `themes.xml`, three entries in
+`ThemeStore`, a layout block in `layouts.py`, a picture and slot in `carlib.py`, then previews.
 
 ## Testing
 - Emulator AVD: 1280x720 @ 160 dpi, Android 30 google_apis arm64 (`emulator-5554`, headless works).
@@ -145,7 +163,7 @@ Theme previews are screenshots of the real screens from the emulator, cropped to
   (car parts in every theme; an odd single-theme failure is usually timing, rerun that theme),
   `dpadwalk.py` (remote reachability), `unit.sh` (flaky-link adb).
   They use `$ADB` (default `adb`) and write screenshots to `$CARLCD_WORK` (default `/tmp/carlcd`).
-- Check every change in **all 10 themes x light and dark** for clipping, and with a remote (D-pad):
+- Check every change in **all 14 themes x light and dark** for clipping, and with a remote (D-pad):
   every control must be reachable and show a focus ring.
 - Things only the real unit can prove: radio/Android Auto/Bluetooth playback and station
   switching, the parking-light signal, GPS speed/heading, the physical Home button, remote hold.
@@ -159,9 +177,10 @@ machine-specific paths.
 ## Product rules from the owner
 - Keep the apps they use: Radio, Bluetooth, Android Auto, Equalizer, YouTube, Music, Apps, Themes, Settings.
 - Every feature must work in **every** theme and in both light and dark.
-- Car is static; only parts move (lights, mirrors, wheels, indicators). Use the owner's own car picture
-  (since 2026-11-26 the single "premium" studio picture, in every theme); don't swap in other car art,
-  don't mirror it. The owner wants any further angles to be of the same quality and will supply them.
+- Car is static; only parts move (lights, mirrors, wheels, indicators). Use the owner's own car pictures:
+  the nine from the mockups, one per theme. The single "premium" studio picture was tried in 2.3 to 2.5
+  and the owner asked for the previous pictures back (they liked the 2.3 lights, mirror and indicators,
+  which are kept). Don't swap in other car art, don't mirror a picture.
 - Large touch targets and fonts (used while driving); nothing clipped; 12-hour clock.
 - Change only what was asked; suggest extras instead of slipping them in.
 - Never commit or push without the owner approving that specific commit/push.
@@ -170,6 +189,5 @@ machine-specific paths.
 ## Open requests (as of 2026-11-26)
 - Rotate the car with a finger drag (needs the car angle images from the owner, or a 3D approach).
 - Clock on the unit is wrong — investigate (time zone / format on the unit vs. the app).
-- Make the Now Playing player bigger and easier to use.
 - Remote diagnostics: built as "Send report" (see Bug reports above). The owner still has to create the
   report key and the first release carrying it has to reach the unit.

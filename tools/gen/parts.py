@@ -1,5 +1,6 @@
-# parts.py <res> <javaDir>: the pieces of the car that move or light up, cut from cut_premium.png, and
-# CarParts.java telling CarView where they sit in each theme's car picture.
+# parts.py <res> <javaDir>: the pieces of each theme's car that move or light up, cut from that theme's
+# picture (cut_<picture>.png with geo_<picture>.json, see carlib.py), and CarParts.java telling CarView
+# where they sit. Run cars.py first (it writes meta.json).
 #   wheel_f/r   rim, un-squashed to a flat circle so it can be turned
 #   mirror      the door mirror head;  mirrorlit = the same with its indicator strip on
 #   mirrorbg    the door and glass that show once the head has folded away
@@ -7,12 +8,10 @@
 import sys, json, math, numpy as np, cv2
 from PIL import Image, ImageDraw, ImageFilter
 import carlib as C
-R, J = sys.argv[1], sys.argv[2]
-G = C.G; M = json.load(open("meta.json")); RAD = 72
-off, _ = C.lights_off()
+RAD = 72
 
-# ---- wheels: the rim is an ellipse leaning a little; map it onto a circle ----
-def rim(wd):
+def rim(P, off, wd):
+    """The rim is an ellipse leaning a little; map it onto a circle."""
     (cx, cy), rx, ry, t = wd["c"], wd["rx"], wd["ry"], math.radians(wd["tilt"])
     # circle point (u,v) in -1..1 -> picture: rotate(tilt) * (u*rx, v*ry) + centre
     A = np.array([[math.cos(t) * rx, -math.sin(t) * ry, cx], [math.sin(t) * rx, math.cos(t) * ry, cy]], np.float32)
@@ -20,66 +19,85 @@ def rim(wd):
     Mx = A @ S
     disc = cv2.warpAffine(off.astype(np.uint8), Mx, (RAD * 2, RAD * 2), flags=cv2.INTER_CUBIC | cv2.WARP_INVERSE_MAP)
     a = Image.new("L", (RAD * 2, RAD * 2), 0); ImageDraw.Draw(a).ellipse((3, 3, RAD * 2 - 3, RAD * 2 - 3), fill=255)
-    im = Image.fromarray(disc).convert("RGBA"); im.putalpha(a.filter(ImageFilter.GaussianBlur(2))); return im
-wheels = {"f": rim(G["wheel_f"]), "r": rim(G["wheel_r"])}
+    solid = cv2.warpAffine(P.ALPHA, Mx, (RAD * 2, RAD * 2), flags=cv2.INTER_LINEAR | cv2.WARP_INVERSE_MAP)   # a rim at the picture's edge
+    a = np.asarray(a.filter(ImageFilter.GaussianBlur(2))).astype(np.float32) * np.clip(solid, 0, 1)
+    im = Image.fromarray(disc).convert("RGBA"); im.putalpha(Image.fromarray(a.round().astype(np.uint8))); return im
 
-# ---- mirror ----
-mi = G["mirror"]; head = C.poly(mi["head"], 0.8)
-xs = [p[0] for p in mi["head"]]; ys = [p[1] for p in mi["head"]]
-pad = 46                                                        # room for the head to swing up when it folds
-box = (int(min(xs)) - 8, int(min(ys)) - pad, int(max(xs)) + 10, int(max(ys)) + 8)
-# what is behind the head: carry the door's glass, trim and paint along the window line into the gap
-hole = cv2.dilate((C.poly(mi["head"], 0) > 0.5).astype(np.uint8), np.ones((5, 5), np.uint8)) > 0
-dx, dy = mi["sill"]; bg = off.copy()
-ys_, xs_ = np.nonzero(hole)
-for y, x in zip(ys_, xs_):
-    t = 1.0
-    while True:
-        px, py = x - dx * t, y - dy * t
-        if not hole[int(round(py)), int(round(px))]: break
-        t += 1.0
-    acc = np.zeros(3, np.float32); n = 0
-    for e in (1.5, 3.0, 4.5):                                   # a few steps past the edge, so one odd pixel cannot streak
-        qx, qy = int(round(px - dx * e)), int(round(py - dy * e))
-        if not hole[qy, qx]: acc += off[qy, qx]; n += 1
-    bg[y, x] = acc / max(n, 1)
-soft = cv2.GaussianBlur(bg, (0, 0), 1.1); bg[hole] = soft[hole]
-bga = np.clip(cv2.GaussianBlur(hole.astype(np.float32), (0, 0), 1.0) * 1.5, 0, 1) * C.ALPHA
-lit_rgb, lit_a = C.turn_lit(mi["turn"], mi["bulb"])
-lit = off * (1 - lit_a[..., None]) + lit_rgb * lit_a[..., None]
-mirror = C.rgba(off, head).crop(box); mirrorlit = C.rgba(lit, np.maximum(head, lit_a * 0.9)).crop(box); mirrorbg = C.rgba(bg, bga).crop(box)
+def behind(P, off, mi):
+    """What is behind the mirror head: carry the door's glass, trim and paint along the lines they run in into the gap."""
+    hole = cv2.dilate((P.poly(mi["head"], 0) > 0.5).astype(np.uint8), np.ones((7, 7), np.uint8)) > 0
+    def dirs(s): return [s] if isinstance(s[0], (int, float)) else s           # one direction, or several to blend
+    which = np.zeros((P.H, P.W), np.int32); sets = [dirs(mi["sill"])]
+    for f in mi.get("fills", []):
+        which[P.poly(f["area"], 0) > 0.5] = len(sets); sets.append(dirs(f["sill"]))
+    bg = off.copy(); solid = P.ALPHA > 0.6
+    ys_, xs_ = np.nonzero(hole)
+    for y, x in zip(ys_, xs_):
+        tot = np.zeros(3, np.float32); wsum = 0.0
+        for dx, dy in sets[which[y, x]]:
+            t = 1.0
+            while True:
+                px, py = x - dx * t, y - dy * t
+                if not hole[int(round(py)), int(round(px))]: break
+                t += 1.0
+            acc = np.zeros(3, np.float32); n = 0
+            for e in (1.5, 3.0, 4.5):                           # a few steps past the edge, so one odd pixel cannot streak
+                qx, qy = int(round(px - dx * e)), int(round(py - dy * e))
+                if not hole[qy, qx] and solid[qy, qx]: acc += off[qy, qx]; n += 1
+            if n: tot += acc / n / (t * t); wsum += 1.0 / (t * t)                # the nearer edge counts for more
+        if wsum: bg[y, x] = tot / wsum
+    soft = cv2.GaussianBlur(bg, (0, 0), 1.1); bg[hole] = soft[hole]
+    return bg, np.clip(cv2.GaussianBlur(hole.astype(np.float32), (0, 0), 1.0) * 1.5, 0, 1) * P.ALPHA
 
-# ---- indicators in the headlamps ----
-bl = np.zeros((C.H, C.W, 4), np.float32)
-for key in ("lamp_near", "lamp_far"):
-    rgb, a = C.turn_lit(G[key]["turn"], G[key]["bulb"])
-    na = np.maximum(bl[..., 3], a); keep = a >= bl[..., 3]
-    bl[..., :3] = np.where(keep[..., None], rgb, bl[..., :3]); bl[..., 3] = na
-blink = C.rgba(bl[..., :3], bl[..., 3])
+def pieces(P):
+    """Everything cut from one picture, at the cutout's own size."""
+    G = P.G; off, _ = P.lights_off(); mi = G["mirror"]
+    head = P.poly(mi["head"], 0.8)
+    xs = [p[0] for p in mi["head"]]; ys = [p[1] for p in mi["head"]]
+    pad = 46                                                    # room for the head to swing up when it folds
+    box = (int(min(xs)) - 10, int(min(ys)) - pad, int(max(xs)) + 10, int(max(ys)) + 8)
+    bg, bga = behind(P, off, mi)
+    lit_rgb, lit_a = P.turn_lit(mi["turn"], mi["bulb"])
+    lit = off * (1 - lit_a[..., None]) + lit_rgb * lit_a[..., None]
+    bl = np.zeros((P.H, P.W, 4), np.float32)                    # the indicators in the headlamps
+    for key in ("lamp_near", "lamp_far"):
+        if "turn" not in G[key]: continue
+        rgb, a = P.turn_lit(G[key]["turn"], G[key]["bulb"])
+        keep = a >= bl[..., 3]
+        bl[..., :3] = np.where(keep[..., None], rgb, bl[..., :3]); bl[..., 3] = np.maximum(bl[..., 3], a)
+    return dict(wheel_f=rim(P, off, G["wheel_f"]), wheel_r=rim(P, off, G["wheel_r"]), box=box,
+                mirror=C.rgba(off, head * P.ALPHA).crop(box), mirrorlit=C.rgba(lit, np.maximum(head, lit_a * 0.9) * P.ALPHA).crop(box),
+                mirrorbg=C.rgba(bg, bga).crop(box), blink=P.canvas(C.rgba(bl[..., :3], bl[..., 3])))
 
-java = []
-for k, m in M.items():
-    sc = m["sc"]
+def values(P, m, box):
+    """One theme's line of CarParts: the picture's geometry in that theme's car_<theme>.png pixels."""
+    G = P.G; mi = G["mirror"]; sc = m["sc"]
     def fx(x): return (x - m["bx0"] + m["ms"]) * sc
     def fy(y): return (y - m["by0"] + m["mt"]) * sc
     vals = [m["w"], m["h"]]
     for n in ("f", "r"):
         wd = G["wheel_" + n]
-        wheels[n].save(f"{R}/drawable-nodpi/wheel_{n}_{k}.png", optimize=True)
         vals += [fx(wd["c"][0]), fy(wd["c"][1]), wd["rx"] * sc, wd["ry"] * sc, wd["tilt"]]
-    bw, bh = box[2] - box[0], box[3] - box[1]
-    fw, fh = max(2, round(bw * sc * 2)), max(2, round(bh * sc * 2))                 # stored at 2x for sharpness
-    for name, im in (("mirror", mirror), ("mirrorlit", mirrorlit), ("mirrorbg", mirrorbg)):
-        im.resize((fw, fh), Image.LANCZOS).save(f"{R}/drawable-nodpi/{name}_{k}.png", optimize=True)
-    vals += [fx(box[0]), fy(box[1]), bw * sc, bh * sc, fx(mi["hinge"][0]), fy(mi["hinge"][1]), mi["fold_deg"], mi["fold_scale"]]
-    canvas = Image.new("RGBA", (m["Wc"], m["Hc"]), (0, 0, 0, 0))
-    canvas.alpha_composite(blink.crop((m["bx0"], m["by0"], m["bx0"] + m["Wc"] - 2 * m["ms"], m["by0"] + m["Hc"] - m["mt"])), (m["ms"], m["mt"]))
-    canvas.resize((m["w"], m["h"]), Image.LANCZOS).save(f"{R}/drawable-nodpi/blink_{k}.png", optimize=True)
-    fogs = []
-    for key in ("fog_near", "fog_far"): fogs += [fx(G[key]["core"][0]), fy(G[key]["core"][1])]
-    vals += [2] + fogs
-    java.append(f'            case "{k}": return new float[]{{' + ", ".join(f"{v:.2f}f" for v in vals) + "};")
-open(J + "/CarParts.java", "w").write('''package com.harislcd.launcher;
+    vals += [fx(box[0]), fy(box[1]), (box[2] - box[0]) * sc, (box[3] - box[1]) * sc,
+             fx(mi["hinge"][0]), fy(mi["hinge"][1]), mi["fold_deg"], mi["fold_scale"]]
+    vals += [len(G["fogs"])]
+    for F in G["fogs"]: vals += [fx(F["core"][0]), fy(F["core"][1])]
+    return vals
+
+if __name__ == "__main__":
+    R, J = sys.argv[1], sys.argv[2]
+    M = json.load(open("meta.json")); done = {}; java = []
+    for k, m in M.items():
+        P = C.picture(m["src"])
+        if m["src"] not in done: done[m["src"]] = pieces(P)
+        pc = done[m["src"]]; sc = m["sc"]; box = pc["box"]
+        for n in ("f", "r"): pc["wheel_" + n].save(f"{R}/drawable-nodpi/wheel_{n}_{k}.png", optimize=True)
+        fw, fh = max(2, round((box[2] - box[0]) * sc * 2)), max(2, round((box[3] - box[1]) * sc * 2))   # stored at 2x for sharpness
+        for name in ("mirror", "mirrorlit", "mirrorbg"):
+            pc[name].resize((fw, fh), Image.LANCZOS).save(f"{R}/drawable-nodpi/{name}_{k}.png", optimize=True)
+        pc["blink"].resize((m["w"], m["h"]), Image.LANCZOS).save(f"{R}/drawable-nodpi/blink_{k}.png", optimize=True)
+        java.append(f'            case "{k}": return new float[]{{' + ", ".join(f"{v:.2f}f" for v in values(P, m, box)) + "};")
+    open(J + "/CarParts.java", "w").write('''package com.harislcd.launcher;
 
 /** Generated by parts.py: where the wheels, the door mirror and the fog lamps sit in each theme's car picture. */
 final class CarParts {
@@ -99,4 +117,4 @@ final class CarParts {
     }
 }
 ''')
-print("parts for", len(M), "themes")
+    print("parts for", len(M), "themes")

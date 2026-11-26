@@ -15,6 +15,8 @@ button is remapped, so nothing in the unit's own software is changed.
 - 12-hour clock with AM/PM and date, weather (Open-Meteo, no key), GPS speed (smoothed so it does
   not flicker between 0 and 1) and a compass showing the heading, with a Kaaba on its rim marking
   the direction of Mecca (Qibla) from where the car is.
+  Tap the compass for a full-screen one with the heading in large letters and how far to turn to
+  face the Qibla.
 - **Now Playing**: shows the track or station and the app it comes from (radio, Android Auto,
   music, YouTube, ...) with previous / play-pause / next. With nothing playing, play opens Music.
 - **The car** is a still image with moving parts:
@@ -27,8 +29,8 @@ button is remapped, so nothing in the unit's own software is changed.
 - Hold **Settings** to open Developer options.
 
 **Themes page** (Themes button on Home and on the Apps page)
-- 10 themes, each with its own layout: Classic, Crimson, Ivory, Gold, Forest, Violet, Silver, Sky,
-  Noir, Amber. Each card shows a preview of that theme.
+- 14 themes, each with its own layout: Classic, Crimson, Ivory, Gold, Forest, Violet, Silver, Sky,
+  Noir, Amber, Nordic, Midnight, Mocha, Carbon. Each card shows a preview of that theme.
 - Every theme has a light and a dark version. Mode: **Auto (car lights)**, **Light**, **Dark**.
   Auto follows the parking lights: lights off = light, lights on = dark.
 
@@ -80,11 +82,11 @@ gradle :app:assembleDebug        # Gradle 8.2, AGP 8.1.4
 Plain Java + Android Views (no Kotlin/Compose), about 10 MB, about 46 MB of memory in use.
 
 ## Regenerating themes
-The nine non-classic home layouts, the car images, the wheel / mirror / indicator overlays and
+The thirteen non-classic home layouts, the car images, the wheel / mirror / indicator overlays and
 `CarParts.java` are generated. Do not edit them by hand; change the generator and rerun:
 ```sh
 cd tools/gen
-python3 cars.py ../../app/src/main/res          # car + lights images from cut_premium.png
+python3 cars.py ../../app/src/main/res          # car + lights images from the cut_*.png pictures
 python3 parts.py ../../app/src/main/res ../../app/src/main/java/com/harislcd/launcher
 python3 layouts.py ../../app/src/main/res       # all theme layouts
 ```

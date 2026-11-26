@@ -50,7 +50,7 @@ public class ThemesActivity extends AppCompatActivity {
         back.setOnClickListener(v -> finish());
         back.setBackgroundResource(R.drawable.focus_bg);
         back.setFocusable(true);
-        head.addView(back, new LinearLayout.LayoutParams(dp(52), dp(52)));
+        head.addView(back, new LinearLayout.LayoutParams(dp(64), dp(64)));
         TextView title = new TextView(this);
         title.setText("THEMES");
         title.setTextColor(fg);
@@ -69,11 +69,11 @@ public class ThemesActivity extends AppCompatActivity {
         ver.setGravity(Gravity.CENTER);
         ver.setPadding(dp(18), 0, dp(18), 0);
         GradientDrawable vb = new GradientDrawable();
-        vb.setCornerRadius(dp(24));
+        vb.setCornerRadius(dp(28));
         vb.setColor(card);
         vb.setStroke(dp(1), hair);
         GradientDrawable vf = new GradientDrawable();
-        vf.setCornerRadius(dp(24));
+        vf.setCornerRadius(dp(28));
         vf.setColor(card);
         vf.setStroke(dp(3), fg);
         android.graphics.drawable.StateListDrawable vs = new android.graphics.drawable.StateListDrawable();
@@ -91,7 +91,7 @@ public class ThemesActivity extends AppCompatActivity {
                         : "You have the latest version (" + Updater.installedName(this) + ")", android.widget.Toast.LENGTH_LONG).show();
             });
         });
-        LinearLayout.LayoutParams vlp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, dp(46));
+        LinearLayout.LayoutParams vlp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, dp(56));
         vlp.setMargins(0, 0, dp(14), 0);
         head.addView(ver, vlp);
 
@@ -103,11 +103,11 @@ public class ThemesActivity extends AppCompatActivity {
         rep.setGravity(Gravity.CENTER);
         rep.setPadding(dp(18), 0, dp(18), 0);
         GradientDrawable rb = new GradientDrawable();
-        rb.setCornerRadius(dp(24));
+        rb.setCornerRadius(dp(28));
         rb.setColor(card);
         rb.setStroke(dp(1), hair);
         GradientDrawable rf = new GradientDrawable();
-        rf.setCornerRadius(dp(24));
+        rf.setCornerRadius(dp(28));
         rf.setColor(card);
         rf.setStroke(dp(3), fg);
         android.graphics.drawable.StateListDrawable rs = new android.graphics.drawable.StateListDrawable();
@@ -124,7 +124,7 @@ public class ThemesActivity extends AppCompatActivity {
                         : "Couldn't send the report: " + err, android.widget.Toast.LENGTH_LONG).show();
             });
         });
-        LinearLayout.LayoutParams rlp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, dp(46));
+        LinearLayout.LayoutParams rlp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, dp(56));
         rlp.setMargins(0, 0, dp(4), 0);
         head.addView(rep, rlp);
 
@@ -140,11 +140,11 @@ public class ThemesActivity extends AppCompatActivity {
             pill.setGravity(Gravity.CENTER);
             pill.setPadding(dp(20), 0, dp(20), 0);
             GradientDrawable pb = new GradientDrawable();
-            pb.setCornerRadius(dp(24));
+            pb.setCornerRadius(dp(28));
             pb.setColor(on ? accent : card);
             pb.setStroke(dp(1), on ? accent : hair);
             GradientDrawable pf = new GradientDrawable();
-            pf.setCornerRadius(dp(24));
+            pf.setCornerRadius(dp(28));
             pf.setColor(on ? accent : card);
             pf.setStroke(dp(3), fg);
             android.graphics.drawable.StateListDrawable ps = new android.graphics.drawable.StateListDrawable();
@@ -152,7 +152,7 @@ public class ThemesActivity extends AppCompatActivity {
             ps.addState(new int[]{}, pb);
             pill.setBackground(ps);
             pill.setFocusable(true);
-            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, dp(46));
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, dp(56));
             lp.setMargins(dp(10), 0, 0, 0);
             head.addView(pill, lp);
             pill.setOnClickListener(v -> {
@@ -217,6 +217,12 @@ public class ThemesActivity extends AppCompatActivity {
                 ThemeStore.saveTheme(this, t[0]);
                 finish();   // the home screen rebuilds itself with the new theme when it comes back
             });
+        }
+        // a last row that is not full gets empty places, so its cards stay the size of the others
+        for (int i = ThemeStore.THEMES.length; i % 5 != 0; i++) {
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, 1, 1f);
+            lp.setMargins(dp(6), dp(7), dp(6), dp(7));
+            row.addView(new View(this), lp);
         }
         setContentView(root);
     }

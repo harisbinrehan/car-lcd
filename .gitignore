@@ -14,3 +14,7 @@ captures/
 
 # python
 __pycache__/
+
+# editor and assistant working files
+.claude/
+.vscode/

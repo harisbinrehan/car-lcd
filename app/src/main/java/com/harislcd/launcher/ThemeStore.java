@@ -24,6 +24,10 @@ final class ThemeStore {
             {"sky", "Sky"},
             {"noir", "Noir"},
             {"amber", "Amber"},
+            {"nordic", "Nordic"},
+            {"midnight", "Midnight"},
+            {"mocha", "Mocha"},
+            {"carbon", "Carbon"},
     };
 
     /** auto = follow the car's lights, light, dark */
@@ -65,6 +69,10 @@ final class ThemeStore {
             case "sky": return R.style.Theme_CarLCD_Sky;
             case "noir": return R.style.Theme_CarLCD_Noir;
             case "amber": return R.style.Theme_CarLCD_Amber;
+            case "nordic": return R.style.Theme_CarLCD_Nordic;
+            case "midnight": return R.style.Theme_CarLCD_Midnight;
+            case "mocha": return R.style.Theme_CarLCD_Mocha;
+            case "carbon": return R.style.Theme_CarLCD_Carbon;
             default: return R.style.Theme_CarLCD;
         }
     }
@@ -81,6 +89,10 @@ final class ThemeStore {
             case "sky": return R.layout.activity_main_sky;
             case "noir": return R.layout.activity_main_noir;
             case "amber": return R.layout.activity_main_amber;
+            case "nordic": return R.layout.activity_main_nordic;
+            case "midnight": return R.layout.activity_main_midnight;
+            case "mocha": return R.layout.activity_main_mocha;
+            case "carbon": return R.layout.activity_main_carbon;
             default: return R.layout.activity_main;
         }
     }

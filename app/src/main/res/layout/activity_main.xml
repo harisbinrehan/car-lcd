@@ -116,23 +116,23 @@
                 android:layout_marginStart="12dp" android:layout_marginEnd="12dp">
                 <View
                     android:layout_width="460dp" android:layout_height="330dp"
-                    android:layout_gravity="center" android:layout_marginBottom="40dp"
+                    android:layout_gravity="center" android:layout_marginBottom="64dp"
                     android:background="@drawable/halo" />
                 <com.harislcd.launcher.CarView android:id="@+id/car_view"
-                    android:layout_width="400dp" android:layout_height="298dp"
-                    android:layout_gravity="center" android:layout_marginBottom="40dp"
+                    android:layout_width="520dp" android:layout_height="298dp"
+                    android:layout_gravity="center" android:layout_marginBottom="64dp"
                     android:focusable="true" android:contentDescription="Toyota Vitz" />
-                <LinearLayout android:id="@+id/np_root" android:layout_width="match_parent" android:layout_height="72dp" android:orientation="horizontal" android:baselineAligned="false" android:gravity="center_vertical" android:minHeight="64dp" android:background="@drawable/card_focus_bg" android:clickable="true" android:focusable="false" android:layout_gravity="bottom" android:paddingStart="14dp" android:paddingEnd="8dp">
-<FrameLayout android:layout_width="50dp" android:layout_height="50dp" android:background="@drawable/tile_bg">
-<ImageView android:layout_width="26dp" android:layout_height="26dp" android:src="@drawable/ic_music" android:layout_gravity="center"/>
+                <LinearLayout android:id="@+id/np_root" android:layout_width="match_parent" android:layout_height="96dp" android:orientation="horizontal" android:baselineAligned="false" android:gravity="center_vertical" android:minHeight="88dp" android:background="@drawable/card_focus_bg" android:clickable="true" android:focusable="false" android:layout_gravity="bottom" android:paddingStart="14dp" android:paddingEnd="8dp">
+<FrameLayout android:layout_width="54dp" android:layout_height="54dp" android:background="@drawable/tile_bg">
+<ImageView android:layout_width="28dp" android:layout_height="28dp" android:src="@drawable/ic_music" android:layout_gravity="center"/>
 </FrameLayout>
 <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:orientation="vertical" android:baselineAligned="false" android:layout_weight="1" android:layout_marginStart="14dp" android:layout_marginEnd="6dp">
-<TextView android:id="@+id/np_title" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Nothing playing" android:textSize="19sp" android:textColor="?attr/cFg" android:maxLines="1" android:includeFontPadding="false" android:fontFamily="sans-serif-medium" android:singleLine="true" android:ellipsize="marquee" android:marqueeRepeatLimit="marquee_forever"/>
-<TextView android:id="@+id/np_sub" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Tap play to start" android:textSize="14sp" android:textColor="?attr/cMuted" android:maxLines="1" android:includeFontPadding="false" android:layout_marginTop="3dp" android:ellipsize="end"/>
+<TextView android:id="@+id/np_title" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Nothing playing" android:textSize="22sp" android:textColor="?attr/cFg" android:maxLines="1" android:includeFontPadding="false" android:fontFamily="sans-serif-medium" android:singleLine="true" android:ellipsize="marquee" android:marqueeRepeatLimit="marquee_forever"/>
+<TextView android:id="@+id/np_sub" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Tap play to start" android:textSize="16sp" android:textColor="?attr/cMuted" android:maxLines="1" android:includeFontPadding="false" android:layout_marginTop="4dp" android:ellipsize="end"/>
 </LinearLayout>
-<ImageView android:id="@+id/np_prev" android:layout_width="52dp" android:layout_height="52dp" android:src="@drawable/ic_prev" android:padding="13dp" android:background="@drawable/focus_bg" android:nextFocusRight="@+id/np_play" android:clickable="true" android:focusable="true"/>
-<ImageView android:id="@+id/np_play" android:layout_width="58dp" android:layout_height="58dp" android:src="@drawable/ic_play" android:padding="15dp" android:background="@drawable/np_play_bg" android:layout_marginStart="4dp" android:layout_marginEnd="4dp" android:nextFocusLeft="@+id/np_prev" android:nextFocusRight="@+id/np_next" android:clickable="true" android:focusable="true"/>
-<ImageView android:id="@+id/np_next" android:layout_width="52dp" android:layout_height="52dp" android:src="@drawable/ic_next" android:padding="13dp" android:background="@drawable/focus_bg" android:nextFocusLeft="@+id/np_play" android:clickable="true" android:focusable="true"/>
+<ImageView android:id="@+id/np_prev" android:layout_width="72dp" android:layout_height="72dp" android:src="@drawable/ic_prev" android:padding="19dp" android:background="@drawable/focus_bg" android:nextFocusRight="@+id/np_play" android:clickable="true" android:focusable="true"/>
+<ImageView android:id="@+id/np_play" android:layout_width="84dp" android:layout_height="84dp" android:src="@drawable/ic_play" android:padding="23dp" android:background="@drawable/np_play_bg" android:layout_marginStart="4dp" android:layout_marginEnd="4dp" android:nextFocusLeft="@+id/np_prev" android:nextFocusRight="@+id/np_next" android:clickable="true" android:focusable="true"/>
+<ImageView android:id="@+id/np_next" android:layout_width="72dp" android:layout_height="72dp" android:src="@drawable/ic_next" android:padding="19dp" android:background="@drawable/focus_bg" android:nextFocusLeft="@+id/np_play" android:clickable="true" android:focusable="true"/>
 </LinearLayout>
             </FrameLayout>
 

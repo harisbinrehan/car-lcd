@@ -1,37 +1,35 @@
-# cars.py <res>: every theme shows the same car (cut_premium.png, the owner's studio picture with the
-# plate blanked), sized to that theme's slot and given a soft ground shadow. The picture was taken with
-# the lamps on, so car_<theme>.png is the lamps-off version and lights_<theme>.png puts the real lit
-# pixels back on top: fully faded in, it is the original picture.
+# cars.py <res>: each theme shows its own car picture (cut_<picture>.png, cut out of the owner's mockups,
+# plates blanked; see THEMES in carlib.py, "classic" shares violet's), sized to that theme's slot and given
+# a soft ground shadow. The pictures were taken with the lamps on, so car_<theme>.png is the lamps-off
+# version and lights_<theme>.png puts the real lit pixels back on top: fully faded in, it is the original
+# picture. Where the lamps are is in geo_<picture>.json. Also writes sizes.json (for layouts.py) and
+# meta.json (for parts.py).
 import sys, json, numpy as np, cv2
 from PIL import Image, ImageDraw, ImageFilter
 import carlib as C
-R = sys.argv[1]
-# the slot each theme's layout gives the car (dp); the car is fitted inside it
-BOX = {"silver": (590, 389), "sky": (744, 410), "noir": (685, 450), "amber": (654, 380), "crimson": (600, 400),
-       "forest": (676, 380), "violet": (697, 400), "gold": (620, 399), "ivory": (640, 370), "classic": (520, 298)}
-off, changed = C.lights_off()
-bx0, by0, bx1, by1 = C.SRC.split()[3].point(lambda v: 255 if v > 100 else 0).getbbox()
-cw, ch = bx1 - bx0, by1 - by0
-ms, mt, mb = 26, 8, 40                                        # room for the shadow
-Wc, Hc = cw + 2 * ms, ch + mt + mb
-def canvas(img):                                              # crop to the car and add the margins
-    out = Image.new("RGBA", (Wc, Hc), (0, 0, 0, 0)); out.alpha_composite(img.crop((bx0, by0, bx1, by1)), (ms, mt)); return out
-# shadow: the car is seen from above, so it sits under the body and trails to the far side
-sh = Image.new("L", (Wc, Hc), 0); d = ImageDraw.Draw(sh)
-d.polygon([(ms + cw * 0.02, mt + ch * 0.50), (ms + cw * 0.10, mt + ch * 0.58), (ms + cw * 0.36, mt + ch * 1.00),
-           (ms + cw * 0.62, mt + ch * 1.03), (ms + cw * 0.99, mt + ch * 0.80), (ms + cw * 1.0, mt + ch * 0.55),
-           (ms + cw * 0.5, mt + ch * 0.45)], fill=150)
-sh = sh.filter(ImageFilter.GaussianBlur(14))
-base = Image.new("RGBA", (Wc, Hc), (0, 0, 0, 255)); base.putalpha(sh)
-base.alpha_composite(canvas(C.rgba(off, C.ALPHA)))
-# the lit pixels, wherever switching off changed anything (plus a soft edge where nothing changed anyway)
-support = cv2.dilate((changed > 0.004).astype(np.float32), np.ones((7, 7), np.uint8))
-la = np.clip(cv2.GaussianBlur(support, (0, 0), 1.5) * 1.6, 0, 1) * C.ALPHA
-glow = canvas(C.rgba(C.RGB, la))
-sizes = {}; meta = {}
-for k, (bw, bh) in BOX.items():
-    sc = min(bw / Wc, bh / Hc); w, h = round(Wc * sc), round(Hc * sc)
-    base.resize((w, h), Image.LANCZOS).save(f"{R}/drawable-nodpi/car_{k}.png", optimize=True)
-    glow.resize((w, h), Image.LANCZOS).save(f"{R}/drawable-nodpi/lights_{k}.png", optimize=True)
-    sizes[k] = (w, h); meta[k] = dict(bx0=bx0, by0=by0, ms=ms, mt=mt, sc=sc, w=w, h=h, Wc=Wc, Hc=Hc)
-json.dump(sizes, open("sizes.json", "w")); json.dump(meta, open("meta.json", "w")); print(sizes)
+
+def layers(P):
+    """The lamps-off car on its shadow, and the lit pixels that go on top, both at cutout size plus margins."""
+    off, changed = P.lights_off()
+    bx0, by0, bx1, by1 = P.bbox; cw, ch = bx1 - bx0, by1 - by0
+    Wc, Hc = cw + 2 * C.MS, ch + C.MT + C.MB
+    sh = Image.new("L", (Wc, Hc), 0)
+    ImageDraw.Draw(sh).ellipse((C.MS + cw * 0.03, C.MT + ch * 0.86, C.MS + cw * 0.97, C.MT + ch * 1.035), fill=175)
+    sh = sh.filter(ImageFilter.GaussianBlur(15))
+    base = Image.new("RGBA", (Wc, Hc), (0, 0, 0, 255)); base.putalpha(sh)
+    base.alpha_composite(P.canvas(C.rgba(off, P.ALPHA)))
+    # the lit pixels, wherever switching off changed anything (plus a soft edge where nothing changed anyway)
+    support = cv2.dilate((changed > 0.004).astype(np.float32), np.ones((7, 7), np.uint8))
+    la = np.clip(cv2.GaussianBlur(support, (0, 0), 1.5) * 1.6, 0, 1) * P.ALPHA
+    return base, P.canvas(C.rgba(P.RGB, la))
+
+if __name__ == "__main__":
+    R = sys.argv[1]; sizes = {}; meta = {}; done = {}
+    for k, name in C.THEMES.items():
+        P = C.picture(name)
+        if name not in done: done[name] = layers(P)
+        base, glow = done[name]; m = P.frame(C.BOX[k]); w, h = m["w"], m["h"]
+        base.resize((w, h), Image.LANCZOS).save(f"{R}/drawable-nodpi/car_{k}.png", optimize=True)
+        glow.resize((w, h), Image.LANCZOS).save(f"{R}/drawable-nodpi/lights_{k}.png", optimize=True)
+        sizes[k] = (w, h); meta[k] = m
+    json.dump(sizes, open("sizes.json", "w")); json.dump(meta, open("meta.json", "w")); print(sizes)
