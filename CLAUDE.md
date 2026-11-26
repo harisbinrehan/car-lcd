@@ -80,9 +80,11 @@ Developer options on the unit: long-press **Settings** in this launcher.
   removed in 2.9 and wants it back only as a proper 3D turntable once that is ready and approved. The
   work for it is outside this repo: a photogrammetry scan of the real car in `~/Desktop/Projects/vitz-scan`
   (Apple Object Capture, `capture.swift`) and a hand-built Blender model in `~/Desktop/Projects/vitz-3d-model`.
-- **Number plate:** the pictures ship blank (public repo). The owner types the plate on the Themes page
-  ("Number plate"); it is kept in prefs (`plate`) on the unit only, never logged, and `CarView` draws it
-  on the blank plate through the four `plate` corners in `geo_<picture>.json` (perspective warp).
+- **Number plate:** `cut_forest.png` carries the car's real plate, as in the owner's original picture. The
+  owner explicitly allowed publishing it on 2026-11-26 ("you can push it"), overriding the earlier rule to
+  blank plates; this applies to the forest picture only. The typed-plate feature of 2.7 to 2.9 (Themes
+  button, prefs key `plate`, `CarView.setPlate`, perspective warp onto `plate` corners in `geo_<picture>.json`)
+  is still in the code but switched off: the button is gone and `geo_forest.json` has no `plate` entry.
 - `CarParts` — **generated** per-theme geometry (leaning wheel ellipses, mirror patch, hinge and fold
   angle, fog lamp tap points). The float layout is documented in the file; `taptest.py` reads it too.
 - `CompassView` — the owner's reference design, identical in every theme **and in both light and dark**
@@ -180,8 +182,8 @@ Adding a theme: colours in both `theme_colors.xml`, a style in `themes.xml`, thr
 
 ## Public repo — keep personal details out
 The GitHub repo is public. Never commit: the owner's name in the UI, a precise home/default
-location (the weather default is city-level on purpose), the car's real number plate (plates in
-all car images are blanked; keep it that way when adding images), IPs/ports/pairing codes, or
+location (the weather default is city-level on purpose), other number plates (the owner allowed
+their own plate on the forest picture on 2026-11-26; the other pictures stay blanked), IPs/ports/pairing codes, or
 machine-specific paths.
 
 ## Product rules from the owner
