@@ -240,9 +240,14 @@ final class Updater {
         });
     }
 
+    // Progress of the download in hand, read by the progress dialog (any thread writes, main thread reads).
+    private static volatile Release current;
+    private static volatile long got, total;
+    private static volatile String failed;      // why the last try stopped; null while running or after success
+
     /** Downloads, checks and hands the APK to Android's installer (which asks the driver to confirm). */
     static void install(Activity a, Release r) {
-        if (busy) return;
+        if (busy) { showProgress(a); return; }   // already downloading: show how far it is
         Diag.log("update", "install " + r.name + " (" + r.code + ") asked for");
         if (Build.VERSION.SDK_INT >= 26 && !a.getPackageManager().canRequestPackageInstalls()) {
             Diag.log("update", "installs from this app are not allowed yet, opening the setting");
@@ -257,30 +262,139 @@ final class Updater {
             return;
         }
         busy = true;
+        current = r;
+        failed = null;
+        total = r.size;
         final Context app = a.getApplicationContext();
-        final Toast[] t = {Toast.makeText(app, "Downloading update " + r.name + "…", Toast.LENGTH_LONG)};
-        t[0].show();
+        final File f = new File(app.getCacheDir(), "update-" + r.code + ".apk");
+        got = f.exists() ? f.length() : 0;      // a part from an earlier try is carried on from
+        showProgress(a);
         new Thread(() -> {
             String err = null;
             try {
-                File f = new File(app.getCacheDir(), "update.apk");
+                File[] old = app.getCacheDir().listFiles();
+                if (old != null) for (File o : old)
+                    if (o.getName().startsWith("update") && o.getName().endsWith(".apk") && !o.equals(f)) o.delete();
                 download(r.url, f, r.size);
-                verify(app, f, r.code);
+                try {
+                    verify(app, f, r.code);
+                } catch (Exception e) {
+                    f.delete();     // a damaged file must not be carried on from
+                    throw e;
+                }
                 startInstaller(app, f);
                 Diag.log("update", "downloaded and checked, handed to the installer");
             } catch (Exception e) {
-                err = e.getMessage() == null ? e.getClass().getSimpleName() : e.getMessage();
+                err = plain(e);
                 Diag.log("update", "failed: " + e);
             } finally {
+                failed = err;
                 busy = false;
             }
-            final String fe = err;
-            if (fe != null) MAIN.post(() -> Toast.makeText(app, "Update failed: " + fe, Toast.LENGTH_LONG).show());
         }, "update-install").start();
     }
 
+    private static String plain(Exception e) {
+        if (e instanceof java.net.UnknownHostException) return "no internet connection";
+        if (e instanceof java.net.SocketTimeoutException) return "the connection is too slow or keeps dropping";
+        return e.getMessage() == null ? e.getClass().getSimpleName() : e.getMessage();
+    }
+
+    private static String mb(long bytes) { return String.format(java.util.Locale.US, "%.1f", bytes / 1048576.0); }
+
+    /** How far the download is, with big text; "Hide" leaves it running. Ends in the installer or a retry offer. */
+    private static void showProgress(Activity a) {
+        final Release r = current;
+        if (r == null || a.isFinishing() || a.isDestroyed()) return;
+        float d = a.getResources().getDisplayMetrics().density;
+        android.widget.LinearLayout box = new android.widget.LinearLayout(a);
+        box.setOrientation(android.widget.LinearLayout.VERTICAL);
+        box.setPadding((int) (24 * d), (int) (12 * d), (int) (24 * d), (int) (4 * d));
+        final android.widget.TextView text = new android.widget.TextView(a);
+        text.setTextSize(19);
+        final android.widget.ProgressBar bar = new android.widget.ProgressBar(a, null, android.R.attr.progressBarStyleHorizontal);
+        bar.setMax(1000);
+        box.addView(text);
+        box.addView(bar, new android.widget.LinearLayout.LayoutParams(
+                android.widget.LinearLayout.LayoutParams.MATCH_PARENT, (int) (28 * d)));
+        final AlertDialog dlg = new AlertDialog.Builder(a)
+                .setTitle("Updating to version " + r.name)
+                .setView(box)
+                .setNegativeButton("Hide", (x, w) -> Toast.makeText(a.getApplicationContext(),
+                        "The download carries on. Check for updates shows it again.", Toast.LENGTH_LONG).show())
+                .show();
+        bigButtons(dlg, d);
+        MAIN.post(new Runnable() {
+            @Override
+            public void run() {
+                if (!dlg.isShowing() || a.isFinishing() || a.isDestroyed()) return;
+                if (busy) {
+                    long g = got, t = total;
+                    bar.setIndeterminate(t <= 0);
+                    if (t > 0) bar.setProgress((int) (g * 1000 / t));
+                    text.setText(t > 0 ? "Downloading: " + mb(g) + " of " + mb(t) + " MB (" + (g * 100 / t) + "%)"
+                            : "Downloading: " + mb(g) + " MB");
+                    MAIN.postDelayed(this, 500);
+                    return;
+                }
+                try { dlg.dismiss(); } catch (Exception ignored) { }
+                String why = failed;
+                if (why == null) return;        // Android's own install screen takes over
+                AlertDialog no = new AlertDialog.Builder(a)
+                        .setTitle("Update not finished")
+                        .setMessage("Reason: " + why + ".\n\nWhat was downloaded is kept (" + mb(got) + " of " + mb(total)
+                                + " MB), so trying again carries on from there.")
+                        .setPositiveButton("Try again", (x, w) -> install(a, r))
+                        .setNegativeButton("Close", null)
+                        .show();
+                android.widget.TextView msg = no.findViewById(android.R.id.message);
+                if (msg != null) msg.setTextSize(19);
+                bigButtons(no, d);
+            }
+        });
+    }
+
+    private static void bigButtons(AlertDialog dlg, float density) {
+        for (int which : new int[]{AlertDialog.BUTTON_POSITIVE, AlertDialog.BUTTON_NEGATIVE}) {
+            android.widget.Button b = dlg.getButton(which);
+            if (b == null) continue;
+            b.setTextSize(19);
+            b.setMinHeight((int) (56 * density));
+        }
+    }
+
+    /**
+     * Fetches the APK, carrying on from whatever is already in the file. A dropped or stalled connection
+     * is tried again (the unit's Wi-Fi is weak); it gives up only after several tries in a row bring nothing.
+     */
     private static void download(String url, File out, long expected) throws Exception {
+        if (expected > 0 && out.length() > expected) out.delete();
+        int empty = 0;
+        while (expected <= 0 || out.length() < expected) {
+            long before = out.length();
+            java.io.IOException dropped = null;
+            try {
+                fetch(url, out);
+            } catch (java.io.IOException e) {
+                dropped = e;
+            }
+            got = out.length();
+            if (dropped == null && expected <= 0) break;                 // size unknown: one clean pass is all there is
+            if (expected > 0 && out.length() >= expected) break;
+            if (out.length() > before) empty = 0;
+            else if (++empty >= 6) throw dropped != null ? dropped : new Exception("download incomplete");
+            Diag.log("update", "download stopped at " + out.length() + " of " + expected + ", carrying on"
+                    + (dropped == null ? "" : " (" + dropped + ")"));
+            Thread.sleep(3000);
+        }
+        if (expected > 0 && out.length() != expected) { out.delete(); throw new Exception("download incomplete"); }
+    }
+
+    /** One connection: asks for the bytes after those already in the file and appends them. */
+    private static void fetch(String url, File out) throws Exception {
+        long have = out.length();
         HttpURLConnection h = null;
+        int s = 0;
         for (int hop = 0; hop < 5; hop++) {          // GitHub redirects the asset to its download host
             h = (HttpURLConnection) new URL(url).openConnection();
             h.setInstanceFollowRedirects(false);
@@ -288,16 +402,22 @@ final class Updater {
             h.setReadTimeout(30000);
             h.setRequestProperty("User-Agent", "car-lcd-updater");
             h.setRequestProperty("Accept", "application/octet-stream");
-            int s = h.getResponseCode();
+            h.setRequestProperty("Accept-Encoding", "identity");
+            if (have > 0) h.setRequestProperty("Range", "bytes=" + have + "-");
+            s = h.getResponseCode();
             if (s >= 300 && s < 400) { url = h.getHeaderField("Location"); h.disconnect(); continue; }
-            if (s != 200) throw new Exception("download answered " + s);
             break;
         }
-        try (InputStream in = h.getInputStream(); OutputStream o = new FileOutputStream(out)) {
+        if (s == 416) { out.delete(); throw new java.io.IOException("server refused the part asked for"); }
+        if (s >= 500) throw new java.io.IOException("download answered " + s);
+        if (s != 200 && s != 206) throw new Exception("download answered " + s);
+        boolean append = s == 206;                   // 200 means the server sent the whole file again
+        try (InputStream in = h.getInputStream(); OutputStream o = new FileOutputStream(out, append)) {
+            long n = append ? have : 0;
             byte[] buf = new byte[64 * 1024];
-            long n = 0;
-            for (int k; (k = in.read(buf)) > 0; ) { o.write(buf, 0, k); n += k; }
-            if (expected > 0 && n != expected) throw new Exception("download incomplete");
+            for (int k; (k = in.read(buf)) > 0; ) { o.write(buf, 0, k); n += k; got = n; }
+        } finally {
+            h.disconnect();
         }
     }
 
